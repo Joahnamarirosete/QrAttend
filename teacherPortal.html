@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teacher Portal — QRAttend</title>
+    <style>
+      :root{--bg:#f7fdfb;--card:#ffffff;--green:#16a34a;--muted:#6b7f7f;--text:#062a27}
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+      .wrap{max-width:1000px;margin:18px auto;padding:18px}
+      .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 8px 24px rgba(2,10,8,0.06)}
+      header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+      h1{margin:0}
+      .cols{display:grid;grid-template-columns:280px 1fr;gap:12px}
+      .avatar{width:84px;height:84px;border-radius:10px;background:linear-gradient(135deg,#ecfdf5,#bbf7d0);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden}
+      .avatar img{width:100%;height:100%;object-fit:cover}
+      .btn{background:var(--green);color:white;padding:6px 8px;border-radius:6px;border:none;cursor:pointer;font-size:0.85rem}
+      .btn.ghost{background:white;color:var(--green);border:1px solid var(--green)}
+      /* Removed .btn.one-inch styles as requested */
+      .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+      input,select,textarea{padding:8px;border:1px solid #e6f6f0;border-radius:8px}
+      .subjects-list{display:flex;flex-direction:column;gap:6px}
+      .live-list{background:#f8fffb;padding:12px;border-radius:8px;border:1px solid #e6f6f0}
+      table{width:100%;border-collapse:collapse}
+      th,td{padding:8px;border-bottom:1px solid #eef9f6;text-align:left}
+      .small{font-size:0.85rem;color:var(--muted)}
+      .modal{display:none;position:fixed;z-index:999;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5)}
+      .modal.show{display:flex;align-items:center;justify-content:center}
+      .modal-content{background:white;border-radius:12px;padding:20px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+      .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+      .modal-header h3{margin:0}
+      .modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted)}
+      .attendance-table{width:100%;border-collapse:collapse;font-size:0.9rem}
+      .attendance-table th{background:#f0fdf4;padding:10px;text-align:left;color:var(--text);font-weight:700;border-bottom:2px solid #d1fae5}
+      .attendance-table td{padding:10px;border-bottom:1px solid #eef9f6}
+      .attendance-table tr:hover{background:#f8fffb}
+      .scanner-container{margin:12px auto;border-radius:8px;border:2px solid #d1fae5;background:#000;overflow:hidden;max-width:360px;aspect-ratio:1/1;display:block}
+      .scanner-container video,.scanner-container canvas{width:100%;height:100%;object-fit:cover;display:block}
+      #scannerToggle{margin-bottom:8px}
+      .scan-feedback{padding:8px;border-radius:8px;margin-bottom:8px;font-weight:600;text-align:center;display:none}
+      .scan-feedback.success{background:#dcfce7;color:#166534;display:block}
+      .scan-feedback.error{background:#fee2e2;color:#991b1b;display:block}
+      #qrScanner{display:none;width:100%;height:auto}
+      #scannerToggle{margin-bottom:8px}
+      /* Global button size override to ensure inline styles are reduced */
+      button, .btn, .primary, .btn-proceed, .logout, .btn-save, .photo-input-label, input[type="button"], input[type="submit"] {
+        padding:6px 8px !important;
+        font-size:0.85rem !important;
+        border-radius:6px !important;
+      }
+      /* Logout follows document flow (will be moved into dashboard when logged) */
+      #logoutBtn{display:none;z-index:1200;margin:12px auto 0;max-width:260px}
+      
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Teacher Portal — QRAttend</h1>
+        <div>
+          <button class="btn" id="logoutBtn" style="display:none" onclick="logoutTeacher()">Logout</button>
+        </div>
+      </header>
+
+      <div id="authCard" class="card">
+        <h3 id="authTitle">Teacher Sign In / Sign Up</h3>
+        <div style="display:flex;gap:12px;margin-top:12px">
+          <div style="flex:1">
+            <div class="form-group">
+              <label>Name</label>
+              <input id="tName" placeholder="Full name">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input id="tEmail" placeholder="you@school.edu">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input id="tPassword" type="password" placeholder="Password">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="teacherSignUp()">Create Account</button>
+              <button class="btn ghost" onclick="teacherLogin()">Login</button>
+            </div>
+            <div id="authMsg" class="small" style="margin-top:8px"></div>
+          </div>
+          <div style="width:260px;border-left:1px dashed #e6f6f0;padding-left:12px">
+            <p class="small">Demo teachers can be created locally. After signing up, you will be taken to your dashboard where you can assign subjects, start classes (live attendance), and manage profile.</p>
+            <p class="small">Subjects available: Practical Research 2 (PR2), Understanding Culture, Society, and Politics (UCSP), Personal Development (PD), Physical Education and Health (PE), General Chemistry (CHEM), General Physics (PHY), Introduction to the Philosophy of the Human Person (PHILO), English for Academic and Professional Purposes (EAPP)</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="dashboard" style="display:none">
+        <div class="card">
+          <div class="cols">
+            <div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                <div class="avatar" id="teacherAvatar">T</div>
+                <div>
+                  <strong id="teacherName">Teacher Name</strong>
+                  <div class="small" id="teacherEmail">email</div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Subjects You Teach</label>
+                <div class="subjects-list" id="teacherSubjects"></div>
+                <select id="subjectSelect" style="margin-top:8px">
+                  <option value="">-- Add Subject --</option>
+                  <option value="PR2">Practical Research 2 (PR2)</option>
+                  <option value="UCSP">Understanding Culture, Society, and Politics (UCSP)</option>
+                  <option value="PD">Personal Development (PD)</option>
+                  <option value="PE">Physical Education and Health (PE)</option>
+                  <option value="CHEM">General Chemistry (CHEM)</option>
+                  <option value="PHY">General Physics (PHY)</option>
+                  <option value="PHILO">Introduction to the Philosophy of the Human Person (PHILO)</option>
+                  <option value="EAPP">English for Academic and Professional Purposes (EAPP)</option>
+                </select>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button class="btn" style="margin-top:8px" onclick="addSubjectToTeacher()">Add Subject</button>
+                </div>
+              </div>
+
+            
+            </div>
+
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <h3 style="margin:0">Live Attendance</h3>
+                <button class="btn" onclick="openProfileModal()">My Profile</button>
+                </div>
+
+              
+
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <select id="liveSubjectSelect" style="flex:1" onchange="onLiveSubjectChange()"></select>
+                <button class="btn" onclick="startClass()">Start Class</button>
+                <button class="btn ghost" onclick="endClass()" id="endClassBtn" style="display:none">End Class</button>
+              </div>
+
+              <div id="liveInfo" class="live-list" style="min-height:120px">
+                <div id="liveStatus" class="small">No active class</div>
+                <div id="liveControls" style="margin-top:8px;display:none">
+                  <button class="btn ghost" id="scannerToggle" onclick="toggleScanner()" style="margin-bottom:8px">📷 Open Camera Scanner</button>
+                  <div id="scanFeedback" class="scan-feedback" style="display:none"></div>
+                  <div class="scanner-container">
+                    <video id="cameraPreview" width="400" height="300" playsinline autoplay muted></video>
+                    <canvas id="qrScanner" width="400" height="300"></canvas>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-bottom:8px;margin-top:8px">
+                    <input id="scanInput" placeholder="Or paste student QR / ID here" style="flex:1">
+                    <button class="btn" onclick="scanStudent()">Add</button>
+                  </div>
+                  <div style="margin-bottom:8px">
+                    <strong>Students (click to remove):</strong>
+                    <div id="liveStudents" style="margin-top:8px"></div>
+                  </div>
+                </div>
+              </div>
+
+              <hr>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <h4 style="margin:0">Attendance Summary</h4>
+                <button class="btn ghost" onclick="downloadAttendanceCSV()">Download CSV</button>
+                </div>
+
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <button class="btn" onclick="openCrudModal('create')">+ Add Record</button>
+              </div>
+              <div id="attendanceSummary" style="max-height:220px;overflow:auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="profileModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>My Profile</h3>
+            <button class="modal-close" onclick="closeProfileModal()">✕</button>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;border-bottom:1px solid #eef9f6;padding-bottom:18px;">
+            <div class="avatar" style="width:100px;height:100px;border-radius:50%;" id="modalTeacherAvatar">P</div>
+            <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px; align-items:center;">
+              <div style="display:flex; gap:8px;">
+                <label for="profilePhotoInput" class="btn ghost" style="display:block;text-align:center;padding:6px 8px !important;cursor:pointer;">Upload Photo</label>
+                <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;" onchange="previewProfilePhoto(event)">
+                <button class="btn" id="removeProfilePhotoBtn" onclick="removeProfilePhoto()" style="background:#dc2626; display:none;">Remove</button>
+              </div>
+              <p class="small" style="margin-top:0;text-align:center;">Optional profile photo</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Name</label>
+            <input id="profileNameInput" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input id="profileAddressInput" placeholder="Address">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input id="profileEmailInput" type="email" placeholder="email@school.edu">
+          </div>
+          <div class="form-group">
+            <label>New Password (leave blank to keep current)</label>
+            <input id="profilePasswordInput" type="password" placeholder="New password">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn" onclick="saveProfileChanges()">Save Changes</button>
+            <button class="btn ghost" onclick="closeProfileModal()">Cancel</button>
+          </div>
+          <div id="profileMsg" class="small" style="margin-top:8px;color:var(--green)"></div>
+        </div>
+      </div>
+
+      <div id="attendanceModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Attendance Details</h3>
+            <button class="modal-close" onclick="closeAttendanceModal()">✕</button>
+          </div>
+          <table class="attendance-table">
+            <thead>
+              <tr>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Streak</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="crudModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 id="crudTitle">Add Attendance Record</h3>
+            <button class="modal-close" onclick="closeCrudModal()">✕</button>
+          </div>
+          <div class="form-group">
+            <label>Student ID</label>
+            <input id="crudStudentId" placeholder="e.g., M01">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input id="crudDate" type="date">
+          </div>
+          <div class="form-group">
+            <label>Subject</label>
+            <select id="crudSubject">
+              <option value="">-- Select Subject --</option>
+              <option value="PR2">Practical Research 2 (PR2)</option>
+              <option value="UCSP">Understanding Culture, Society, and Politics (UCSP)</option>
+              <option value="PD">Personal Development (PD)</option>
+              <option value="PE">Physical Education and Health (PE)</option>
+              <option value="CHEM">General Chemistry (CHEM)</option>
+              <option value="PHY">General Physics (PHY)</option>
+              <option value="PHILO">Introduction to the Philosophy of the Human Person (PHILO)</option>
+              <option value="EAPP">English for Academic and Professional Purposes (EAPP)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="crudStatus">
+              <option value="present">Present</option>
+              <option value="late">Late</option>
+              <option value="absent">Absent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Time In (HH:MM)</label>
+            <input id="crudTimeIn" type="time" placeholder="09:00">
+          </div>
+          <div class="form-group">
+            <label>Time Out (HH:MM)</label>
+            <input id="crudTimeOut" type="time" placeholder="10:00">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="saveCrudRecord()" id="crudSaveBtn">Save Record</button>
+            <button class="btn ghost" onclick="closeCrudModal()">Cancel</button>
+            <button class="btn" style="background:#dc2626" onclick="deleteCrudRecord()" id="crudDeleteBtn" style="display:none">Delete</button>
+          </div>
+        </div>
+
+          </div>
+
+    </div>
+
+    <script>
+      // Simple demo data store keys
+      const TEACHERS_KEY = 'qr_teachers';
+      const STUDENTS_KEY = 'qr_students'; // we'll store a copy of default students here for roster lookups
+      const ATTEND_KEY = 'qr_attendance'; // maps dates/subject -> array of studentIds or store per student
+      
+      // Demo students (smaller objects suffice for roster)
+      const studentsData = [
+            // Male Students (M01-M18)
+            { id: 'M01', name: 'ANINAO, Will Andrei Sarmiento', email: 'm01@student.school', section: 'Stem 12 Robert Boyle', password: 'M01', gender: 'Male' },
+            { id: 'M02', name: 'BARRAMEDA, Rexel Corona', email: 'm02@student.school', section: 'Stem 12 Robert Boyle', password: 'M02', gender: 'Male' },
+            { id: 'M03', name: 'BAUTISTA, Tristan Jake Hernandez', email: 'm03@student.school', section: 'Stem 12 Robert Boyle', password: 'M03', gender: 'Male' },
+            { id: 'M04', name: 'BAUYON, Luis Miguel Rogando', email: 'm04@student.school', section: 'Stem 12 Robert Boyle', password: 'M04', gender: 'Male' },
+            { id: 'M05', name: 'BITUIN, Jerzon Causapin', email: 'm05@student.school', section: 'Stem 12 Robert Boyle', password: 'M05', gender: 'Male' },
+            { id: 'M06', name: 'CARANDANG, Cris Dave Jerryl Macalalad', email: 'm06@student.school', section: 'Stem 12 Robert Boyle', password: 'M06', gender: 'Male' },
+            { id: 'M07', name: 'DE LA REA, Van Aaron Corpuz', email: 'm07@student.school', section: 'Stem 12 Robert Boyle', password: 'M07', gender: 'Male' },
+            { id: 'M08', name: 'ERMITA, John Cedric Creus', email: 'm08@student.school', section: 'Stem 12 Robert Boyle', password: 'M08', gender: 'Male' },
+            { id: 'M09', name: 'FILLER, Dairos Villalobos', email: 'm09@student.school', section: 'Stem 12 Robert Boyle', password: 'M09', gender: 'Male' },
+            { id: 'M10', name: 'HERNANDEZ, Chowen Albano', email: 'm10@student.school', section: 'Stem 12 Robert Boyle', password: 'M10', gender: 'Male' },
+            { id: 'M11', name: 'HORNILLA, Chris Lorenz Bendicio', email: 'm11@student.school', section: 'Stem 12 Robert Boyle', password: 'M11', gender: 'Male' },
+            { id: 'M12', name: 'LEGUARDA, Jam Marco Louis Padilla', email: 'm12@student.school', section: 'Stem 12 Robert Boyle', password: 'M12', gender: 'Male' },
+            { id: 'M13', name: 'MACALALAD, Cedric Baon', email: 'm13@student.school', section: 'Stem 12 Robert Boyle', password: 'M13', gender: 'Male' },
+            { id: 'M14', name: 'PANCIPANO, Eugene Jr Poris', email: 'm14@student.school', section: 'Stem 12 Robert Boyle', password: 'M14', gender: 'Male' },
+            { id: 'M15', name: 'RUBIO, Jake Consigo', email: 'm15@student.school', section: 'Stem 12 Robert Boyle', password: 'M15', gender: 'Male' },
+            { id: 'M16', name: 'SANCHEZ, Retszhel Bryne Martinez', email: 'm16@student.school', section: 'Stem 12 Robert Boyle', password: 'M16', gender: 'Male' },
+            { id: 'M17', name: 'SUELEN, Jordan Cadacio', email: 'm17@student.school', section: 'Stem 12 Robert Boyle', password: 'M17', gender: 'Male' },
+            { id: 'M18', name: 'VILLACRUSIS, Gian Carlo Balugna', email: 'm18@student.school', section: 'Stem 12 Robert Boyle', password: 'M18', gender: 'Male' },
+
+            // Female Students (F19-F37)
+            { id: 'F19', name: 'AMILA, Camille Grace Barangas', email: 'f19@student.school', section: 'Stem 12 Robert Boyle', password: 'F19', gender: 'Female' },
+            { id: 'F20', name: 'ATASAN, Maria Meryl Bathan', email: 'f20@student.school', section: 'Stem 12 Robert Boyle', password: 'F20', gender: 'Female' },
+            { id: 'F21', name: 'BARUA, Schinina Mae Noveno', email: 'f21@student.school', section: 'Stem 12 Robert Boyle', password: 'F21', gender: 'Female' },
+            { id: 'F22', name: 'BATHAN, Gean Maitan Alamag', email: 'f22@student.school', section: 'Stem 12 Robert Boyle', password: 'F22', gender: 'Female' },
+            { id: 'F23', name: 'BAUTISTA, Caitlin Tish De Los Reyes', email: 'f23@student.school', section: 'Stem 12 Robert Boyle', password: 'F23', gender: 'Female' },
+            { id: 'F24', name: 'BULACLAC, Abegail Aquino', email: 'f24@student.school', section: 'Stem 12 Robert Boyle', password: 'F24', gender: 'Female' },
+            { id: 'F25', name: 'BURGOS, Louise Jane Mandanas', email: 'f25@student.school', section: 'Stem 12 Robert Boyle', password: 'F25', gender: 'Female' },
+            { id: 'F26', name: 'CARINAN, Alecsa Cahinhinan', email: 'f26@student.school', section: 'Stem 12 Robert Boyle', password: 'F26', gender: 'Female' },
+            { id: 'F27', name: 'CARINAN, Sheena Mae Obsequias', email: 'f27@student.school', section: 'Stem 12 Robert Boyle', password: 'F27', gender: 'Female' },
+            { id: 'F28', name: 'DE LOS REYES, Samira Belle Mulingbayan', email: 'f28@student.school', section: 'Stem 12 Robert Boyle', password: 'F28', gender: 'Female' },
+            { id: 'F29', name: 'HALILI, Shekiescy Shane Bituin', email: 'f29@student.school', section: 'Stem 12 Robert Boyle', password: 'F29', gender: 'Female' },
+            { id: 'F30', name: 'JUNIO, Rica De Sosa', email: 'f30@student.school', section: 'Stem 12 Robert Boyle', password: 'F30', gender: 'Female' },
+            { id: 'F31', name: 'LA TORRE, Trizha Mercado', email: 'f31@student.school', section: 'Stem 12 Robert Boyle', password: 'F31', gender: 'Female' },
+            { id: 'F32', name: 'PEGA, Louisse Allysson Pinsan', email: 'f32@student.school', section: 'Stem 12 Robert Boyle', password: 'F32', gender: 'Female' },
+            { id: 'F33', name: 'QUIJANO, Elaysa Mae Garcia', email: 'f33@student.school', section: 'Stem 12 Robert Boyle', password: 'F33', gender: 'Female' },
+            { id: 'F34', name: 'RAMIREZ, Ma. Kristine Hernandez', email: 'f34@student.school', section: 'Stem 12 Robert Boyle', password: 'F34', gender: 'Female' },
+            { id: 'F35', name: 'ROSETE, Ma. Antonette Magsalay', email: 'f35@student.school', section: 'Stem 12 Robert Boyle', password: 'F35', gender: 'Female' },
+            { id: 'F36', name: 'TABORDA, Jen Syrelle Cortez', email: 'f36@student.school', section: 'Stem 12 Robert Boyle', password: 'F36', gender: 'Female' },
+            { id: 'F37', name: 'VENICARIO, Charmelle Elaine Mendoza', email: 'f37@student.school', section: 'Stem 12 Robert Boyle', password: 'F37', gender: 'Female' },
+        ];
+      const defaultStudents = studentsData;
+     
+      // Storage helpers
+      function getTeachers(){ try{ return JSON.parse(localStorage.getItem(TEACHERS_KEY) || '[]'); }catch(e){ return []; } }
+      function saveTeachers(list){ localStorage.setItem(TEACHERS_KEY, JSON.stringify(list)); }
+      function getAttendance(){ try{ return JSON.parse(localStorage.getItem(ATTEND_KEY) || '{}'); }catch(e){ return {}; } }
+      function saveAttendance(o){ localStorage.setItem(ATTEND_KEY, JSON.stringify(o)); }
+      function initStudents(){ 
+        if(!localStorage.getItem(STUDENTS_KEY)) { 
+          localStorage.setItem(STUDENTS_KEY, JSON.stringify(defaultStudents)); 
+        } 
+      }
+      initStudents();
+
+      // Auth and dashboard boot
+      let currentTeacher = null;
+
+      function teacherSignUp(){ const name = document.getElementById('tName').value.trim(); const email = document.getElementById('tEmail').value.trim().toLowerCase(); const pass = document.getElementById('tPassword').value; const msg = document.getElementById('authMsg'); if(!name||!email||!pass){ msg.textContent='Please fill all fields.'; return; } const teachers = getTeachers(); if(teachers.find(t=>t.email===email)){ msg.textContent='Account already exists with this email.'; return; } const teacher = { id:'T'+Date.now(), name, email, password:pass, subjects:[], profile:{} }; teachers.push(teacher); saveTeachers(teachers); msg.textContent='Created. Logging in...'; setTimeout(()=>loginWithTeacher(teacher),300); }
+
+      function teacherLogin(){ const email = document.getElementById('tEmail').value.trim().toLowerCase(); const pass = document.getElementById('tPassword').value; const teachers = getTeachers(); const t = teachers.find(x=>x.email===email && x.password===pass); const msg = document.getElementById('authMsg'); if(!t){ msg.textContent='Invalid credentials'; return; } loginWithTeacher(t); }
+
+      function loginWithTeacher(t){ currentTeacher = t; sessionStorage.setItem('currentTeacher', JSON.stringify(t)); document.getElementById('authCard').style.display='none'; document.getElementById('dashboard').style.display='block'; document.getElementById('logoutBtn').style.display='inline-block'; renderDashboard(); }
+
+      function logoutTeacher(){ sessionStorage.removeItem('currentTeacher'); location.href = 'login.html?role=teacher'; }
+
+      function renderDashboard(){
+        const t = JSON.parse(sessionStorage.getItem('currentTeacher') || 'null');
+        if(!t) return;
+        currentTeacher = t;
+        const tn = document.getElementById('teacherName'); if(tn) tn.textContent = t.name;
+        const te = document.getElementById('teacherEmail'); if(te) te.textContent = t.email;
+        const avatar = document.getElementById('teacherAvatar'); if(avatar){ if(t.profile?.photo) avatar.innerHTML = '<img src="'+t.profile.photo+'">'; else avatar.textContent = t.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase(); }
+        const list = document.getElementById('teacherSubjects'); if(list){ list.innerHTML=''; (t.subjects||[]).forEach(s=>{ const el = document.createElement('div'); el.textContent = s; el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; const btn = document.createElement('button'); btn.textContent='Remove'; btn.className='btn ghost'; btn.onclick=()=>removeSubject(s); el.appendChild(btn); list.appendChild(el); }); }
+        const liveSel = document.getElementById('liveSubjectSelect'); if(liveSel){ liveSel.innerHTML=''; liveSel.appendChild(new Option('-- Select subject --','')); (t.subjects||[]).forEach(s=> liveSel.appendChild(new Option(s,s))); }
+        renderStudentRoster(); renderAttendanceSummary();
+        try{ showProfileButtonIfLogged(); }catch(e){}
+      }
+      // ensure profile button visibility
+      try{ showProfileButtonIfLogged(); }catch(e){}
+
+      // Expose profile button when dashboard loads
+        // Profile toggle removed; no-op
+        function showProfileButtonIfLogged(){ }
+
+      function addSubjectToTeacher(){ const s = document.getElementById('subjectSelect').value; if(!s) return; const teachers = getTeachers(); const t = teachers.find(x=>x.id===currentTeacher.id); if(!t.subjects) t.subjects=[]; if(!t.subjects.includes(s)) t.subjects.push(s); saveTeachers(teachers); currentTeacher = t; sessionStorage.setItem('currentTeacher', JSON.stringify(t)); renderDashboard(); }
+      function removeSubject(s){ const teachers = getTeachers(); const t = teachers.find(x=>x.id===currentTeacher.id); t.subjects = (t.subjects||[]).filter(x=>x!==s); saveTeachers(teachers); currentTeacher = t; sessionStorage.setItem('currentTeacher', JSON.stringify(t)); renderDashboard(); }
+
+      function previewTeacherPhoto(e){ const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev)=>{ const t = JSON.parse(sessionStorage.getItem('currentTeacher')); t.profile = t.profile||{}; t.profile.photo = ev.target.result; sessionStorage.setItem('currentTeacher', JSON.stringify(t)); const teachers = getTeachers(); const idx = teachers.findIndex(x=>x.id===t.id); if(idx>-1){ teachers[idx].profile = t.profile; saveTeachers(teachers); } renderDashboard(); }; r.readAsDataURL(f); }
+      function saveTeacherProfile(){
+        // Inline profile inputs should be present; if not, show alert
+        const pNameEl = document.getElementById('profileName');
+        if(!pNameEl){ alert('Profile editor not available'); return; }
+        const name = pNameEl.value.trim();
+        const bd = document.getElementById('profileBirthday').value;
+        const addr = document.getElementById('profileAddress').value;
+        const teachers = getTeachers();
+        const t = teachers.find(x=>x.id===currentTeacher.id);
+        t.name = name;
+        t.profile = t.profile||{};
+        t.profile.birthday = bd;
+        t.profile.address = addr;
+        saveTeachers(teachers);
+        currentTeacher = t;
+        sessionStorage.setItem('currentTeacher', JSON.stringify(t));
+        const msgEl = document.getElementById('teacherMsg'); if(msgEl) msgEl.textContent='Profile saved.';
+        renderDashboard();
+        setTimeout(()=>{ if(msgEl) msgEl.textContent=''; },1500);
+      }
+
+      
+
+      // Save from the inline profile card (updates name, email, password, and profile fields)
+      function saveInlineTeacherProfile(){
+        const name = document.getElementById('profileName').value.trim();
+        const email = document.getElementById('profileEmail').value.trim().toLowerCase();
+        const newPass = document.getElementById('profilePassword').value;
+        const bd = document.getElementById('profileBirthday').value;
+        const addr = document.getElementById('profileAddress').value;
+
+        const t = JSON.parse(sessionStorage.getItem('currentTeacher') || 'null');
+        if(!t) return alert('No teacher session');
+
+        const teachers = getTeachers();
+        const dup = teachers.find(x=> x.email === email && x.id !== t.id);
+        if(dup){ document.getElementById('teacherMsg').textContent = 'Email already in use by another account.'; return; }
+
+        const idx = teachers.findIndex(x=> x.id === t.id);
+        if(idx < 0){ document.getElementById('teacherMsg').textContent = 'Teacher record not found.'; return; }
+
+        teachers[idx].name = name || teachers[idx].name;
+        teachers[idx].email = email || teachers[idx].email;
+        if(newPass) teachers[idx].password = newPass;
+        teachers[idx].profile = teachers[idx].profile || {};
+        teachers[idx].profile.birthday = bd;
+        teachers[idx].profile.address = addr;
+
+        saveTeachers(teachers);
+        // update session and currentTeacher
+        currentTeacher = teachers[idx];
+        sessionStorage.setItem('currentTeacher', JSON.stringify(currentTeacher));
+        document.getElementById('teacherMsg').textContent = 'Saved.';
+        renderDashboard();
+        setTimeout(()=>{ document.getElementById('teacherMsg').textContent = ''; }, 900);
+      }
+
+      // Toggle visibility of inline profile card
+      function toggleInlineProfile(){
+        const el = document.getElementById('inlineProfileCard');
+        const btn = document.getElementById('profileToggleSmall');
+        if(!el) return;
+        const opening = !el.classList.contains('show');
+        el.classList.toggle('show');
+        if(btn) btn.textContent = opening ? 'Close' : 'Edit Profile';
+      }
+
+      // Roster rendering
+      function renderStudentRoster(){ const students = JSON.parse(localStorage.getItem(STUDENTS_KEY) || '[]'); const q = document.getElementById('studentSearch').value.trim().toLowerCase(); const body = document.getElementById('rosterBody'); body.innerHTML=''; (students||[]).filter(s=> !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)).forEach(s=>{ const tr = document.createElement('tr'); tr.innerHTML = `<td><strong>${s.id}</strong></td><td>${s.name}</td>`; tr.onclick = ()=>{}; body.appendChild(tr); }); }
+
+      // Live attendance
+      let currentClass = null;
+      function onLiveSubjectChange(){ }
+      // Parse time string "HH:MM" into an ISO datetime for today. If invalid, return null.
+      function parseTimeToTodayISO(timeStr){
+        if(!timeStr) return null;
+        const parts = timeStr.split(':');
+        if(parts.length < 2) return null;
+        let hh = parseInt(parts[0],10);
+        let mm = parseInt(parts[1],10);
+        if(Number.isNaN(hh) || Number.isNaN(mm)) return null;
+        if(hh < 0 || hh > 23) return null;
+        if(mm < 0 || mm > 59) return null;
+        const d = new Date();
+        d.setHours(hh, mm, 0, 0);
+        return d.toISOString();
+      }
+
+      function startClass(){
+        const subj = document.getElementById('liveSubjectSelect').value;
+        if(!subj){ alert('Select a subject first'); return; }
+
+        // Ask teacher for start and end times (HH:MM). Default: now for start, +1h for end.
+        const now = new Date();
+        const defaultStart = now.toTimeString().slice(0,5); // HH:MM
+        const defaultEndDate = new Date(now.getTime() + 60*60*1000);
+        const defaultEnd = defaultEndDate.toTimeString().slice(0,5);
+
+        let startInput = prompt('Class start time (HH:MM) — leave blank to use now', defaultStart);
+        let endInput = prompt('Class end time (HH:MM) — optional', defaultEnd);
+
+        let startISO = parseTimeToTodayISO(startInput) || now.toISOString();
+        let endISO = parseTimeToTodayISO(endInput) || new Date(new Date(startISO).getTime() + 60*60*1000).toISOString();
+
+        currentClass = { subject: subj, startedAt: startISO, endsAt: endISO, students: [] };
+
+        document.getElementById('liveStatus').textContent = `Class for ${subj} — ${formatTime(currentClass.startedAt)} - ${formatTime(currentClass.endsAt)}`;
+        document.getElementById('liveControls').style.display='block';
+        document.getElementById('endClassBtn').style.display='inline-block';
+        document.getElementById('liveStudents').innerHTML='';
+      }
+      function endClass(){ if(!currentClass) return; const attend = getAttendance(); const date = new Date().toISOString().slice(0,10); if(!attend[date]) attend[date] = {}; if(!attend[date][currentClass.subject]) attend[date][currentClass.subject] = []; const now = new Date().toISOString(); const presentIds = new Set(currentClass.students.map(s=>s.id)); // update existing present records or create if missing
+        currentClass.students.forEach(sObj=>{
+          const timeIn = sObj.timeIn || currentClass.startedAt;
+          const timeOut = now;
+          const started = new Date(currentClass.startedAt);
+          const tIn = new Date(timeIn);
+          const minutesLate = Math.max(0, Math.round((tIn - started)/60000));
+          const status = minutesLate > 10 ? 'late' : 'present';
+          // check if attend entry exists for this student
+          const list = attend[date][currentClass.subject];
+          const existing = list.find(r => r.id === sObj.id);
+          if(existing){
+            existing.timeIn = existing.timeIn || timeIn;
+            existing.timeOut = timeOut;
+            existing.status = status;
+          } else {
+            const entry = { id: sObj.id, timeIn, timeOut, status };
+            attend[date][currentClass.subject].push(entry);
+          }
+          // update per-student record (find and update or push)
+          const key = 'student_records_' + sObj.id;
+          let rec = JSON.parse(localStorage.getItem(key) || '[]');
+          const recIdx = rec.findIndex(r => r.date === date && r.subject === currentClass.subject);
+          if(recIdx >= 0){ rec[recIdx] = { subject: currentClass.subject, date, status, timeIn, timeOut, teacherId: currentTeacher?.id || '' }; }
+          else { rec.push({ subject: currentClass.subject, date, status, timeIn, timeOut, teacherId: currentTeacher?.id || '' }); }
+          localStorage.setItem(key, JSON.stringify(rec));
+        });
+        // mark absent for those not present
+        const students = studentsData || [];
+        students.forEach(st=>{ if(!presentIds.has(st.id)){
+          const list = attend[date][currentClass.subject];
+          const existing = list.find(r => r.id === st.id);
+          if(!existing){
+            const entry = { id: st.id, timeIn: null, timeOut: null, status: 'absent' };
+            attend[date][currentClass.subject].push(entry);
+            const key = 'student_records_' + st.id; let rec = JSON.parse(localStorage.getItem(key) || '[]'); const recIdx = rec.findIndex(r => r.date === date && r.subject === currentClass.subject); if(recIdx < 0){ rec.push({ subject: currentClass.subject, date, status: 'absent', timeIn: null, timeOut: null, teacherId: currentTeacher?.id || '' }); localStorage.setItem(key, JSON.stringify(rec)); }
+          }
+        }});
+        saveAttendance(attend); currentClass = null; document.getElementById('liveStatus').textContent = 'No active class'; document.getElementById('liveControls').style.display='none'; document.getElementById('endClassBtn').style.display='none'; document.getElementById('liveStudents').innerHTML=''; renderAttendanceSummary(); }
+      function addToLive(studentId){
+        if(!currentClass){ alert('Start a class first'); return; }
+        if(!studentId) return;
+        const id = studentId.toString().trim().toUpperCase();
+        if(currentClass.students.find(x=> (x.id||'').toString().toUpperCase() === id)) return;
+        const nowISO = new Date().toISOString();
+        currentClass.students.push({ id: id, timeIn: nowISO });
+
+        // Determine status based on lateness relative to class start (10 minute threshold)
+        try{
+          const attend = getAttendance();
+          const date = new Date().toISOString().slice(0,10);
+          if(!attend[date]) attend[date] = {};
+          if(!attend[date][currentClass.subject]) attend[date][currentClass.subject] = [];
+          const list = attend[date][currentClass.subject];
+          const exists = list.find(r => r.id === id);
+
+          // compute minutes late
+          let minutesLate = 0;
+          try{
+            if(currentClass.startedAt){
+              const started = new Date(currentClass.startedAt);
+              const scanned = new Date(nowISO);
+              minutesLate = Math.max(0, Math.round((scanned - started)/60000));
+            }
+          }catch(e){ minutesLate = 0 }
+
+          const status = minutesLate > 10 ? 'late' : 'present';
+          if(!exists){
+            list.push({ id: id, timeIn: nowISO, timeOut: null, status });
+            saveAttendance(attend);
+
+            // update per-student records
+            const key = 'student_records_' + id;
+            let rec = JSON.parse(localStorage.getItem(key) || '[]');
+            const recIdx = rec.findIndex(r => r.date===date && r.subject===currentClass.subject);
+            if(recIdx < 0){
+              rec.push({ subject: currentClass.subject, date, status, timeIn: nowISO, timeOut: null, teacherId: currentTeacher?.id || '' });
+              localStorage.setItem(key, JSON.stringify(rec));
+            }
+          }
+        }catch(e){console.error(e)}
+
+        renderLiveStudents();
+        renderAttendanceSummary();
+      }
+
+      // Scanner variables
+      let cameraStream = null;
+      let scanningActive = false;
+      // debounce recent scans to allow continuous scanning without repeating the same ID
+      let _lastScannedId = null;
+      let _lastScannedAt = 0;
+
+      function toggleScanner(){
+        if(scanningActive) {
+          stopScanner();
+        } else {
+          startScanner();
+        }
+      }
+
+      function startScanner(){
+        const video = document.getElementById('cameraPreview');
+        const toggle = document.getElementById('scannerToggle');
+        
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+          .then(stream => {
+            cameraStream = stream;
+            video.srcObject = stream;
+            video.style.display = 'block';
+            video.onloadedmetadata = () => video.play();
+            toggle.textContent = '❌ Close Camera';
+            scanningActive = true;
+            // kick off continuous scanning loop
+            scanQRCode(video);
+          })
+          .catch(err => {
+            showScanFeedback('Camera access denied. Try pasting QR data directly.', 'error');
+            console.error('Camera error:', err);
+          });
+      }
+
+      function stopScanner(){
+        if(cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+          cameraStream = null;
+        }
+        document.getElementById('cameraPreview').style.display = 'none';
+        document.getElementById('qrScanner').style.display = 'none';
+        document.getElementById('scannerToggle').textContent = '📷 Open Camera Scanner';
+        scanningActive = false;
+        // reset last scan so a subsequent start can re-detect
+        _lastScannedId = null;
+        _lastScannedAt = 0;
+      }
+
+      function scanQRCode(video){
+        const canvas = document.getElementById('qrScanner');
+        canvas.style.display = 'block';
+        const ctx = canvas.getContext('2d');
+
+        const scanLoop = () => {
+          if(!scanningActive) return;
+
+          try {
+            if(video.readyState === video.HAVE_ENOUGH_DATA){
+              canvas.width = video.videoWidth || canvas.width;
+              canvas.height = video.videoHeight || canvas.height;
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+              if(code){
+                // Determine a stable id string (JSON payload with student or plain text)
+                let idToProcess = null;
+                try{
+                  const data = JSON.parse(code.data);
+                  if(data && data.student) idToProcess = String(data.student).trim().toUpperCase();
+                }catch(e){
+                  idToProcess = String(code.data).trim().toUpperCase();
+                }
+
+                if(idToProcess){
+                  const now = Date.now();
+                  // only process if different from last scanned or older than debounce window
+                  if(_lastScannedId !== idToProcess || (now - _lastScannedAt) > 1800){
+                    _lastScannedId = idToProcess;
+                    _lastScannedAt = now;
+                    // show feedback and add to live list, but keep scanning
+                    const name = (() => {
+                      try{ const parsed = JSON.parse(code.data); return parsed?.name || null }catch(e){ return null }
+                    })();
+                    processScannedStudent(idToProcess, name);
+                  }
+                }
+              }
+            }
+          } catch(err) {
+            console.warn('Scan error:', err);
+          }
+          requestAnimationFrame(scanLoop);
+        };
+        scanLoop();
+      }
+
+      function processScannedStudent(studentId, studentName){
+        const id = studentId.toString().trim().toUpperCase();
+        const student = getStudentById(id);
+        showScanFeedback(`✓ Scanned: ${student.name || studentName || id}`, 'success');
+        addToLive(id);
+        // play beep to confirm scan
+        try{ playBeep(); }catch(e){/* ignore */}
+        // keep camera running so next student can scan immediately
+      }
+
+      // Short beep for successful scans using Web Audio API
+      function playBeep(){
+        try{
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AudioCtx();
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(880, ctx.currentTime);
+
+          // start with a very low gain to avoid clicks
+          g.gain.setValueAtTime(0.0001, ctx.currentTime);
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start();
+
+          // ramp up quickly to audible level, hold for ~2s, then ramp down
+          const now = ctx.currentTime;
+          const rampIn = 0.02; // seconds to ramp up
+          const hold = 2.0; // hold duration in seconds (approx)
+          const rampOut = 0.05; // seconds to ramp down
+
+          g.gain.exponentialRampToValueAtTime(0.18, now + rampIn);
+          // schedule ramp down at (now + rampIn + hold)
+          g.gain.exponentialRampToValueAtTime(0.0001, now + rampIn + hold + rampOut);
+
+          // stop oscillator shortly after ramp down completes
+          const stopAfterMs = Math.round((rampIn + hold + rampOut + 0.05) * 1000);
+          setTimeout(()=>{
+            try{ o.stop(); ctx.close(); }catch(e){}
+          }, stopAfterMs);
+        }catch(e){ console.warn('Beep failed', e); }
+      }
+
+      function showScanFeedback(message, type){
+        const feedback = document.getElementById('scanFeedback');
+        feedback.textContent = message;
+        feedback.className = 'scan-feedback ' + type;
+        feedback.style.display = 'block';
+        setTimeout(() => {
+          feedback.style.display = 'none';
+        }, 3000);
+      }
+
+      function scanStudent(){
+        const val = document.getElementById('scanInput').value.trim();
+        if(!val) return;
+        let id = val;
+        try{
+          const parsed = JSON.parse(val);
+          if(parsed.student) id = parsed.student;
+        }catch(e){}
+        id = id.toString().trim().toUpperCase();
+        const student = getStudentById(id);
+        showScanFeedback(`✓ Added: ${student.name || id}`, 'success');
+        addToLive(id);
+        document.getElementById('scanInput').value='';
+      }
+
+      function renderLiveStudents(){ const cont = document.getElementById('liveStudents'); cont.innerHTML=''; if(!currentClass) return; currentClass.students.forEach(sObj=>{ const id = sObj.id; const s = getStudentById(id); const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='6px 0'; const timeIn = sObj.timeIn ? formatTime(sObj.timeIn) : '-'; el.innerHTML = `<div>${s? s.name : id} <small style="color:var(--muted)">${id}</small><div class=\"small\">In: ${timeIn}</div></div>`; el.onclick = ()=>{ if(confirm('Remove from live list?')){ currentClass.students = currentClass.students.filter(x=>x.id!==id); renderLiveStudents(); renderAttendanceSummary(); } }; cont.appendChild(el); }); }
+      function addToLiveFromRoster(id){ addToLive(id); }
+      function getStudentById(id){ return (studentsData||[]).find(s=>s.id===id) || { id, name: id }; }
+
+      // Attendance summary and CRUD
+      function renderAttendanceSummary(){ const attend = getAttendance(); const container = document.getElementById('attendanceSummary'); container.innerHTML=''; const dates = Object.keys(attend).sort().reverse(); dates.forEach(date=>{ const box = document.createElement('div'); box.style.borderBottom='1px solid #eef9f6'; box.style.padding='6px 0'; box.style.marginBottom='12px'; box.innerHTML = `<strong>${date}</strong>`; const sublist = document.createElement('div'); sublist.style.marginTop='6px'; Object.keys(attend[date]).forEach(subj=>{ const students = attend[date][subj] || []; const present = students.filter(s=>s.status==='present').length; const late = students.filter(s=>s.status==='late').length; const absent = students.filter(s=>s.status==='absent').length; const el = document.createElement('div'); el.style.marginBottom = '8px'; el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${subj}</strong> <span class="small">(present:${present} late:${late} absent:${absent})</span></div><div style="display:flex;gap:12px;align-items:center"><button class="btn" style="padding:6px 10px;font-size:0.9rem" onclick="showAttendees('${date}','${subj}')">👁</button><button class="btn" style="padding:6px 10px;font-size:0.9rem" onclick="downloadAttendanceCSVFor('${date}','${subj}')">⬇ CSV</button><button class="btn" style="background:#dc2626;padding:6px 10px;font-size:0.9rem" onclick="deleteAttendanceSummary('${date}','${subj}')">×</button></div></div>`; sublist.appendChild(el); }); box.appendChild(sublist); container.appendChild(box); }); }
+
+      function downloadAttendanceCSV(){
+        const attend = getAttendance();
+        const rows = [];
+        rows.push(['date','subject','studentId','status','timeIn','timeOut','teacherId']);
+        Object.keys(attend).sort().forEach(date=>{
+          Object.keys(attend[date]).forEach(subject=>{
+            (attend[date][subject]||[]).forEach(rec=>{
+              rows.push([date, subject, rec.id || '', rec.status || '', rec.timeIn || '', rec.timeOut || '', rec.teacherId || '']);
+            });
+          });
+        });
+
+        const csvContent = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'attendance_export.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      // Download CSV for a specific date and subject
+      function downloadAttendanceCSVFor(date, subject){
+        const attend = getAttendance();
+        const list = (attend[date] && attend[date][subject]) ? attend[date][subject] : [];
+        const rows = [];
+        rows.push(['date','subject','studentId','status','timeIn','timeOut','teacherId']);
+        (list||[]).forEach(rec => {
+          rows.push([date, subject, rec.id || '', rec.status || '', rec.timeIn || '', rec.timeOut || '', rec.teacherId || '']);
+        });
+
+        const csvContent = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safeSubj = String(subject).replace(/[^a-zA-Z0-9_-]/g,'');
+        a.download = `attendance_${date}_${safeSubj}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function showAttendees(date, subj){ const attend = getAttendance(); const list = (attend[date] && attend[date][subj]) ? attend[date][subj] : []; const modal = document.getElementById('attendanceModal'); const title = modal.querySelector('.modal-header h3'); title.textContent = `${subj} — ${date}`; const tbody = modal.querySelector('tbody'); tbody.innerHTML=''; const allStudents = studentsData || []; allStudents.forEach((student, studentIdx)=>{ const record = list.find(r => r.id === student.id); const e = record || { id: student.id, status: 'absent', timeIn: null, timeOut: null }; const findIdx = list.findIndex(r => r.id === student.id); const idx = findIdx >= 0 ? findIdx : -1; const name = student.name; const tIn = e.timeIn ? formatTime(e.timeIn) : '-'; const tOut = e.timeOut ? formatTime(e.timeOut) : '-'; const streak = computeStreak(student.id, subj); const statusColor = e.status==='present' ? '#065f46' : (e.status==='late' ? '#b45309' : '#991b1b'); const tr = document.createElement('tr'); tr.innerHTML = `<td><strong>${e.id}</strong></td><td>${name}</td><td style="color:${statusColor};font-weight:600">${(e.status||'').toUpperCase()}</td><td>${tIn}</td><td>${tOut}</td><td><strong>${streak}</strong></td><td><button class="btn ghost" style="padding:4px 8px;font-size:0.8rem" onclick="openCrudModal('edit','${date}','${subj}',${idx},'${student.id}')">Edit</button> <button class="btn" style="padding:4px 8px;font-size:0.8rem;background:#dc2626" onclick="${idx >= 0 ? `deleteAttendanceRecord('${date}','${subj}',${idx})` : `alert('No record to delete for this student')`}">Delete</button></td>`; tbody.appendChild(tr); }); modal.classList.add('show'); }
+
+      function closeAttendanceModal(){ document.getElementById('attendanceModal').classList.remove('show'); }
+
+      // CRUD modal functions
+      let currentCrudContext = { mode:'create', date:null, subject:null, index:null };
+      function openCrudModal(mode, date, subject, index, studentId){ currentCrudContext = { mode, date, subject, index }; const modal = document.getElementById('crudModal'); const title = document.getElementById('crudTitle'); const deleteBtn = document.getElementById('crudDeleteBtn'); document.getElementById('crudStudentId').value = ''; document.getElementById('crudDate').value = date || new Date().toISOString().slice(0,10); document.getElementById('crudSubject').value = subject || ''; document.getElementById('crudStatus').value = 'present'; document.getElementById('crudTimeIn').value = ''; document.getElementById('crudTimeOut').value = ''; deleteBtn.style.display = 'none'; if(mode==='create'){ title.textContent='Add Attendance Record'; if(studentId) document.getElementById('crudStudentId').value = studentId; } else { title.textContent='Edit Attendance Record'; deleteBtn.style.display='inline-block'; const attend = getAttendance(); const rec = (attend[date] && attend[date][subject]) ? attend[date][subject][index] : null; if(rec){ document.getElementById('crudStudentId').value = rec.id; document.getElementById('crudDate').value = date; document.getElementById('crudSubject').value = subject; document.getElementById('crudStatus').value = rec.status || 'present'; if(rec.timeIn) document.getElementById('crudTimeIn').value = rec.timeIn.slice(11,16); if(rec.timeOut) document.getElementById('crudTimeOut').value = rec.timeOut.slice(11,16); } } modal.classList.add('show'); }
+      function closeCrudModal(){ document.getElementById('crudModal').classList.remove('show'); }
+
+      function saveCrudRecord(){ const studentId = document.getElementById('crudStudentId').value.trim().toUpperCase(); const date = document.getElementById('crudDate').value; const subject = document.getElementById('crudSubject').value; const status = document.getElementById('crudStatus').value; const timeInStr = document.getElementById('crudTimeIn').value; const timeOutStr = document.getElementById('crudTimeOut').value; if(!studentId || !date || !subject){ alert('Please fill required fields'); return; } const attend = getAttendance(); if(!attend[date]) attend[date] = {}; if(!attend[date][subject]) attend[date][subject] = []; const timeIn = timeInStr ? `${date}T${timeInStr}:00Z` : null; const timeOut = timeOutStr ? `${date}T${timeOutStr}:00Z` : null; if(currentCrudContext.mode === 'create'){ attend[date][subject].push({ id: studentId, status, timeIn, timeOut }); } else { attend[currentCrudContext.date][currentCrudContext.subject][currentCrudContext.index] = { id: studentId, status, timeIn, timeOut }; } saveAttendance(attend); // update per-student record
+        const key = 'student_records_' + studentId; let rec = JSON.parse(localStorage.getItem(key) || '[]'); const recIdx = rec.findIndex(r => r.date === date && r.subject === subject); if(recIdx >= 0){ rec[recIdx] = { subject, date, status, timeIn, timeOut, teacherId: currentTeacher?.id || '' }; } else { rec.push({ subject, date, status, timeIn, timeOut, teacherId: currentTeacher?.id || '' }); } localStorage.setItem(key, JSON.stringify(rec)); closeCrudModal(); renderAttendanceSummary(); alert('Record saved'); }
+
+      function deleteAttendanceRecord(date, subject, index){ if(!confirm('Delete this attendance record?')) return; const attend = getAttendance(); if(attend[date] && attend[date][subject]){ const deleted = attend[date][subject].splice(index,1)[0]; if(attend[date][subject].length===0) delete attend[date][subject]; if(Object.keys(attend[date]).length===0) delete attend[date]; saveAttendance(attend); const key = 'student_records_' + deleted.id; let rec = JSON.parse(localStorage.getItem(key) || '[]'); rec = rec.filter(r => !(r.date===date && r.subject===subject)); localStorage.setItem(key, JSON.stringify(rec)); renderAttendanceSummary(); closeAttendanceModal(); alert('Record deleted'); } }
+
+      function deleteCrudRecord(){ if(!confirm('Delete this record?')) return; deleteAttendanceRecord(currentCrudContext.date, currentCrudContext.subject, currentCrudContext.index); closeCrudModal(); }
+
+      function deleteAttendanceSummary(date, subject){ if(!confirm(`Delete all attendance records for ${subject} on ${date}?`)) return; const attend = getAttendance(); if(attend[date] && attend[date][subject]){ const records = attend[date][subject]; records.forEach(rec=>{ const key = 'student_records_' + rec.id; let studentRec = JSON.parse(localStorage.getItem(key) || '[]'); studentRec = studentRec.filter(r => !(r.date===date && r.subject===subject)); localStorage.setItem(key, JSON.stringify(studentRec)); }); delete attend[date][subject]; if(Object.keys(attend[date]).length===0) delete attend[date]; saveAttendance(attend); renderAttendanceSummary(); alert('Attendance records deleted'); } }
+
+      // Helpers
+      function formatTime(iso){ if(!iso) return ''; try{ const d = new Date(iso); return d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }catch(e){ return iso; } }
+
+      function computeStreak(studentId, subjectCode){ try{ const key = 'student_records_' + studentId; const rec = JSON.parse(localStorage.getItem(key) || '[]'); const subjRec = rec.filter(r=>r.subject===subjectCode).sort((a,b)=> b.date.localeCompare(a.date)); let streak = 0; for(let i=0;i<subjRec.length;i++){ if(subjRec[i].status==='present' || subjRec[i].status==='late') streak++; else break; } return streak; }catch(e){ return 0; } }
+
+      // Profile Modal Functions
+
+      // Handles photo preview and updates session storage
+      function previewProfilePhoto(e){
+        const f = e.target.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = (ev)=>{
+          // Update the modal preview immediately
+          const modalAvatar = document.getElementById('modalTeacherAvatar');
+          if(modalAvatar) {
+            modalAvatar.innerHTML = '<img src="'+ev.target.result+'">';
+            modalAvatar.style.borderRadius = '50%'; // Keep consistent style
+            modalAvatar.style.width = '100px';
+            modalAvatar.style.height = '100px';
+          }
+
+          // Store the photo data URL temporarily in the current session/teacher object
+          let t = JSON.parse(sessionStorage.getItem('currentTeacher'));
+          if(t) {
+            t.profile = t.profile||{};
+            t.profile.photo = ev.target.result;
+            sessionStorage.setItem('currentTeacher', JSON.stringify(t));
+          }
+
+          // Show the remove button as a photo is now present
+          const removeBtn = document.getElementById('removeProfilePhotoBtn');
+          if(removeBtn) removeBtn.style.display = 'inline-block';
+        };
+        r.readAsDataURL(f);
+      }
+
+      // Removes the profile photo
+      function removeProfilePhoto(){
+        if(!confirm('Are you sure you want to remove your profile photo?')) return;
+
+        let t = JSON.parse(sessionStorage.getItem('currentTeacher') || 'null');
+        if(!t) return alert('No teacher session');
+
+        // 1. Remove photo from session
+        t.profile = t.profile || {};
+        t.profile.photo = null;
+        sessionStorage.setItem('currentTeacher', JSON.stringify(t));
+
+        // 2. Remove photo from persistent storage
+        const teachers = getTeachers();
+        const idx = teachers.findIndex(x => x.id === t.id);
+        if(idx > -1){
+            teachers[idx].profile = teachers[idx].profile || {};
+            teachers[idx].profile.photo = null;
+            saveTeachers(teachers);
+        }
+        
+        // 3. Update modal preview (fall back to initials)
+        const modalAvatar = document.getElementById('modalTeacherAvatar');
+        if(modalAvatar) {
+            modalAvatar.innerHTML = '';
+            modalAvatar.textContent = t.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+        }
+        
+        // 4. Hide the remove button
+        const removeBtn = document.getElementById('removeProfilePhotoBtn');
+        if(removeBtn) removeBtn.style.display = 'none';
+
+        // 5. Clear the file input value
+        document.getElementById('profilePhotoInput').value = '';
+
+        // 6. Update dashboard avatar
+        renderDashboard();
+
+        // Show success message
+        document.getElementById('profileMsg').textContent = 'Photo removed.';
+        setTimeout(() => {
+            document.getElementById('profileMsg').textContent = '';
+        }, 1500);
+      }
+
+
+      function openProfileModal(){
+        const t = JSON.parse(sessionStorage.getItem('currentTeacher') || 'null');
+        if(!t) return alert('No teacher session');
+
+        // Populate the new avatar field
+        const modalAvatar = document.getElementById('modalTeacherAvatar');
+        if(modalAvatar){
+          if(t.profile?.photo) modalAvatar.innerHTML = '<img src="'+t.profile.photo+'">';
+          else modalAvatar.textContent = t.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+          modalAvatar.style.borderRadius = '50%'; // Ensure circular
+          modalAvatar.style.width = '100px';
+          modalAvatar.style.height = '100px';
+        }
+        // Reset file input value to allow re-upload of the same file
+        document.getElementById('profilePhotoInput').value = '';
+
+        // Show/Hide remove button based on photo presence
+        const removeBtn = document.getElementById('removeProfilePhotoBtn');
+        if(removeBtn){
+            removeBtn.style.display = t.profile?.photo ? 'inline-block' : 'none';
+        }
+
+
+        // Populate form with current teacher data
+        document.getElementById('profileNameInput').value = t.name || '';
+        document.getElementById('profileAddressInput').value = (t.profile && t.profile.address) || '';
+        document.getElementById('profileEmailInput').value = t.email || '';
+        document.getElementById('profilePasswordInput').value = '';  // Never pre-fill password
+
+        // Clear message
+        document.getElementById('profileMsg').textContent = '';
+
+        // Show modal
+        document.getElementById('profileModal').classList.add('show');
+      }
+
+      function closeProfileModal(){
+        document.getElementById('profileModal').classList.remove('show');
+      }
+
+      function saveProfileChanges(){
+        const name = document.getElementById('profileNameInput').value.trim();
+        const address = document.getElementById('profileAddressInput').value.trim();
+        const email = document.getElementById('profileEmailInput').value.trim().toLowerCase();
+        const newPassword = document.getElementById('profilePasswordInput').value.trim();
+
+        const t = JSON.parse(sessionStorage.getItem('currentTeacher') || 'null');
+        if(!t) return alert('No teacher session');
+
+        // Validation
+        if(!name || !email){
+          document.getElementById('profileMsg').textContent = 'Name and email are required.';
+          document.getElementById('profileMsg').style.color = 'var(--green)';
+          return;
+        }
+
+        const teachers = getTeachers();
+        // Check if email is already in use by another teacher
+        const dupEmail = teachers.find(x => x.email === email && x.id !== t.id);
+        if(dupEmail){
+          document.getElementById('profileMsg').textContent = 'Email already in use by another account.';
+          document.getElementById('profileMsg').style.color = 'var(--green)';
+          return;
+        }
+
+        // Find and update teacher record
+        const idx = teachers.findIndex(x => x.id === t.id);
+        if(idx < 0){
+          document.getElementById('profileMsg').textContent = 'Teacher record not found.';
+          document.getElementById('profileMsg').style.color = 'var(--green)';
+          return;
+        }
+
+        teachers[idx].name = name;
+        teachers[idx].email = email;
+        if(newPassword) teachers[idx].password = newPassword;
+        teachers[idx].profile = teachers[idx].profile || {};
+        teachers[idx].profile.address = address;
+        // NEW: Persist the photo URL from the session object (updated in previewProfilePhoto or removed in removeProfilePhoto)
+        teachers[idx].profile.photo = t.profile?.photo || null;
+
+
+        // Save to localStorage
+        saveTeachers(teachers);
+
+        // Update sessionStorage with new teacher data
+        const updatedTeacher = teachers[idx];
+        currentTeacher = updatedTeacher;
+        sessionStorage.setItem('currentTeacher', JSON.stringify(updatedTeacher));
+
+        // Show success message
+        document.getElementById('profileMsg').textContent = 'Changes saved successfully!';
+        document.getElementById('profileMsg').style.color = '#16a34a';
+
+        // Update dashboard UI immediately (which includes the avatar)
+        renderDashboard();
+
+        // Auto-close modal after 1.5 seconds
+        setTimeout(() => {
+          closeProfileModal();
+        }, 1500);
+      }
+
+      // Attach robust handlers and adjust logout placement
+      try{
+        const pbtn = document.getElementById('profileToggleSmall');
+        if(pbtn){
+          pbtn.addEventListener('click', function(e){
+            try{ toggleInlineProfile(); }catch(err){ console.error('toggleInlineProfile error', err); }
+          });
+        }
+
+        const logout = document.getElementById('logoutBtn');
+        // Move logout into dashboard card so it follows the end of UI content
+        const dashboardCard = document.querySelector('#dashboard .card');
+        if(logout && dashboardCard){
+          // append as last child so it flows with page content
+          dashboardCard.appendChild(logout);
+        }
+      }catch(e){ console.warn('Profile/logout helper attach failed', e); }
+
+      // Auto login if session exists
+      (function(){ const s = sessionStorage.getItem('currentTeacher'); if(s){ currentTeacher = JSON.parse(s); document.getElementById('authCard').style.display='none'; document.getElementById('dashboard').style.display='block'; const lb = document.getElementById('logoutBtn'); if(lb) lb.style.display='block'; renderDashboard(); } })();
+      // show profile button if logged
+      showProfileButtonIfLogged();
+    </script>
+  </body>
+</html>

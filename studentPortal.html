@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Student Portal — QRAttend</title>
+    <style>
+      :root{--bg:#f3fbf7;--card:#ffffff;--green:#16a34a;--teal:#0d9488;--muted:#6b7f7f;--text:#0f3b36}
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+      header{background:linear-gradient(90deg,var(--green),var(--teal));color:white;padding:20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+      header h1{margin:0;font-size:1.4rem}
+      .logout{background:rgba(255,255,255,0.2);border:1px solid white;color:white;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:0.85rem;transition:all 0.2s}
+      .logout:hover{background:rgba(255,255,255,0.3)}
+      .container{max-width:900px;margin:20px auto;padding:20px}
+      .profile-card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 8px 24px rgba(15,59,54,0.08);display:flex;gap:20px;align-items:center;margin-bottom:20px}
+      .profile-pic{width:96px;height:96px;border-radius:12px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden}
+      .profile-pic img{width:100%;height:100%;object-fit:cover}
+      .profile-info{flex:1}
+      .profile-info h2{margin:0 0 6px;color:var(--text)}
+      .profile-info p{margin:2px 0;color:var(--muted);font-size:0.95rem}
+      .profile-stats{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap}
+      .stat-mini{background:#f0fdf4;padding:6px 12px;border-radius:8px;font-size:0.85rem;border-left:3px solid var(--green)}
+      .stat-mini strong{color:var(--green)}
+      .actions{display:flex;gap:10px}
+      .btn{background:var(--green);color:white;padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:700;transition:all 0.2s;font-size:0.85rem}
+      .btn:hover{background:var(--teal);transform:translateY(-2px);box-shadow:0 4px 12px rgba(22,163,74,0.2)}
+      .btn.secondary{background:white;color:var(--green);border:1px solid rgba(16,163,74,0.2)}
+      .btn.secondary:hover{background:#f0fdf4}
+      .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #ecfdf5;flex-wrap:wrap}
+      .tab-btn{background:transparent;border:none;padding:12px 16px;font-size:0.95rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s}
+      .tab-btn:hover{color:var(--text)}
+      .tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+      .content-section{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 8px 24px rgba(15,59,54,0.06);display:none}
+      .content-section.active{display:block;animation:fadeIn 0.2s}
+      @keyframes fadeIn{from{opacity:0.8;transform:translateY(5px)};to{opacity:1;transform:translateY(0)}}
+      .content-section h3{margin:0 0 16px;color:var(--text)}
+      .qr-preview{display:flex;align-items:center;gap:16px;padding:16px;background:#fafafa;border-radius:10px}
+      .qr-preview img{width:140px;height:140px;border-radius:8px;background:white}
+      /* Modal for ID preview */
+      .modal{display:none;position:fixed;z-index:1200;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.45);align-items:center;justify-content:center}
+      .modal.show{display:flex}
+      .modal-content{background:white;border-radius:12px;padding:16px;max-width:460px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+      .modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#6b7f7f}
+      .qr-info{flex:1}
+      .qr-info p{margin:0;color:var(--muted);font-size:0.95rem}
+      .attendance-table{width:100%;border-collapse:collapse;margin-top:12px}
+      .attendance-table th{background:#f0fdf4;padding:12px;text-align:left;color:var(--text);font-weight:700;border-bottom:2px solid #d1fae5;font-size:0.9rem}
+      .attendance-table td{padding:12px;border-bottom:1px solid #e5f3f0;font-size:0.9rem}
+      .status-present{color:var(--green);font-weight:700}
+      .status-absent{color:#dc2626;font-weight:700}
+      .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+      .empty-state p{margin:8px 0;font-size:0.95rem}
+      .profile-form{display:grid;gap:16px;margin-top:16px}
+      .form-group{display:flex;flex-direction:column;gap:6px}
+      .form-group label{font-weight:600;color:var(--text)}
+      .form-group input{padding:10px;border:1px solid #d1fae5;border-radius:8px;font-size:0.95rem}
+      .form-group input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,0.1)}
+      .photo-upload{display:flex;flex-direction:column;gap:12px}
+      .photo-input-wrapper{position:relative;display:inline-block}
+      .photo-input-label{display:inline-block;background:var(--green);color:white;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:600;transition:all 0.2s}
+      .photo-input-label:hover{background:var(--teal)}
+      .photo-input-label input[type="file"]{display:none}
+      .photo-preview{width:120px;height:120px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;border:2px dashed #d1fae5}
+      .photo-preview img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+      .btn-save{background:var(--green);color:white;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all 0.2s}
+      .btn-save:hover{background:var(--teal);transform:translateY(-2px)}
+      .alert{padding:12px 16px;border-radius:8px;margin-top:12px;font-size:0.9rem}
+      .alert.success{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
+      .alert.error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+      @media(max-width:768px){.profile-card{flex-direction:column;align-items:flex-start}.actions{width:100%;gap:8px}.btn{flex:1}.tabs{gap:0;margin-left:-4px}.tab-btn{padding:10px 12px;font-size:0.85rem}.qr-preview{flex-direction:column;text-align:center}.qr-preview img{width:120px;height:120px}}
+      /* Global override for button sizing to reduce all button footprints */
+      button, .btn, .primary, .btn-proceed, .logout, .btn-save, .photo-input-label, input[type="button"], input[type="submit"] {
+        padding:6px 8px !important;
+        font-size:0.85rem !important;
+        border-radius:6px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Student Portal</h1>
+    </header>
+
+    <div class="container">
+      <!-- Profile Header -->
+      <div class="profile-card" id="profileCard">
+        <div class="profile-pic" id="profilePic">🎓</div>
+        <div class="profile-info">
+          <div style="display:flex;align-items:center;gap:8px">
+            <h2 id="studentName" style="margin:0">Student Name</h2>
+            <span id="streakBadge" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:white;font-weight:700;padding:4px 8px;border-radius:6px;font-size:0.85rem;white-space:nowrap">🔥 Streak: 0</span>
+          </div>
+          <p id="studentSection">Section — </p>
+          <p id="studentId">Student ID: —</p>
+          <div class="profile-stats">
+            <div class="stat-mini"><strong id="totalClassesStat">0</strong> Total Classes</div>
+            <div class="stat-mini"><strong id="presentStat">0</strong> Present</div>
+            <div class="stat-mini"><strong id="rateStat">0%</strong> Attendance</div>
+          </div>
+        </div>
+        <div class="actions">
+            <button class="btn" id="viewIdBtn">View ID</button>
+          <button class="btn secondary" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('qr')">My QR Code</button>
+        <button class="tab-btn" onclick="switchTab('attendance')">Attendance</button>
+        <button class="tab-btn" onclick="switchTab('subjects')">My Subjects</button>
+        <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+      </div>
+
+      <!-- QR Code Section -->
+      <div class="content-section active" id="qrSection">
+        <h3>Your Student QR Code</h3>
+        <div class="qr-preview">
+          <div id="qrPreview" style="background:white;border-radius:8px"></div>
+          <div class="qr-info">
+            <p><strong>How it works:</strong></p>
+            <p>Your QR contains your student identity. Teachers scan this during class to mark you present.</p>
+            <p style="margin-top:12px">Click the "Download QR" button above to save it as an image.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance Section -->
+      <div class="content-section" id="attendanceSection">
+        <h3>Attendance Summary</h3>
+        <div style="background:#f0fdf4;padding:16px;border-radius:10px;margin-bottom:16px;border:1px solid #d1fae5">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <label style="font-weight:600;font-size:0.9rem;color:var(--text)">Filter by Month</label>
+              <select id="monthFilter" onchange="renderAttendance()" style="padding:8px 12px;border:1px solid #d1fae5;border-radius:6px;font-size:0.9rem;background:white;cursor:pointer">
+                <option value="">All Months</option>
+                <option value="01">January</option>
+                <option value="02">February</option>
+                <option value="03">March</option>
+                <option value="04">April</option>
+                <option value="05">May</option>
+                <option value="06">June</option>
+                <option value="07">July</option>
+                <option value="08">August</option>
+                <option value="09">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <label style="font-weight:600;font-size:0.9rem;color:var(--text)">Date Range</label>
+              <input type="date" id="startDate" onchange="renderAttendance()" style="padding:8px 12px;border:1px solid #d1fae5;border-radius:6px;font-size:0.9rem">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <label style="font-weight:600;font-size:0.9rem;color:var(--text)">To</label>
+              <input type="date" id="endDate" onchange="renderAttendance()" style="padding:8px 12px;border:1px solid #d1fae5;border-radius:6px;font-size:0.9rem">
+            </div>
+            <button onclick="resetAttendanceFilter()" style="background:white;color:var(--green);border:1px solid var(--green);padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.9rem;transition:all 0.2s" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">Reset</button>
+          </div>
+        </div>
+        <div id="attendanceContent"></div>
+      </div>
+
+      <!-- Subjects Section -->
+      <div class="content-section" id="subjectsSection">
+        <h3>My Subjects</h3>
+        <div id="subjectsContent"></div>
+      </div>
+
+      <!-- Settings Section -->
+      <div class="content-section" id="settingsSection">
+        <h3>Account Settings</h3>
+        <div class="profile-form">
+          <div class="photo-upload">
+            <label style="font-weight:600;color:var(--text)">Profile Photo</label>
+            <div style="display:flex;gap:16px;align-items:flex-start">
+              <div class="photo-preview" id="photoPreview">📷</div>
+              <div style="flex:1">
+                <label class="photo-input-label">
+                  Choose Photo
+                  <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                </label>
+                <p style="margin:8px 0;color:var(--muted);font-size:0.9rem">Recommended: Square image (JPG or PNG)</p>
+                <button class="btn btn-save" onclick="savePhoto()" style="margin-top:8px;width:100%">Upload Photo</button>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid #ecfdf5;margin:16px 0">
+
+          <div>
+            <label style="font-weight:600;color:var(--text);margin-bottom:12px;display:block">Change Password</label>
+            <div class="form-group">
+              <label>Current Password</label>
+              <input id="currentPassword" type="password" placeholder="Enter current password">
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input id="newPassword" type="password" placeholder="Enter new password">
+            </div>
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <input id="confirmPassword" type="password" placeholder="Confirm new password">
+            </div>
+            <button class="btn btn-save" onclick="updatePassword()" style="width:100%">Update Password</button>
+          </div>
+          <div id="alertBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script>
+      const studentsData = [
+            // Male Students (M01-M18)
+            { id: 'M01', name: 'ANINAO, Will Andrei Sarmiento', email: 'm01@student.school', section: 'Stem 12 Robert Boyle', password: 'M01', gender: 'Male' },
+            { id: 'M02', name: 'BARRAMEDA, Rexel Corona', email: 'm02@student.school', section: 'Stem 12 Robert Boyle', password: 'M02', gender: 'Male' },
+            { id: 'M03', name: 'BAUTISTA, Tristan Jake Hernandez', email: 'm03@student.school', section: 'Stem 12 Robert Boyle', password: 'M03', gender: 'Male' },
+            { id: 'M04', name: 'BAUYON, Luis Miguel Rogando', email: 'm04@student.school', section: 'Stem 12 Robert Boyle', password: 'M04', gender: 'Male' },
+            { id: 'M05', name: 'BITUIN, Jerzon Causapin', email: 'm05@student.school', section: 'Stem 12 Robert Boyle', password: 'M05', gender: 'Male' },
+            { id: 'M06', name: 'CARANDANG, Cris Dave Jerryl Macalalad', email: 'm06@student.school', section: 'Stem 12 Robert Boyle', password: 'M06', gender: 'Male' },
+            { id: 'M07', name: 'DE LA REA, Van Aaron Corpuz', email: 'm07@student.school', section: 'Stem 12 Robert Boyle', password: 'M07', gender: 'Male' },
+            { id: 'M08', name: 'ERMITA, John Cedric Creus', email: 'm08@student.school', section: 'Stem 12 Robert Boyle', password: 'M08', gender: 'Male' },
+            { id: 'M09', name: 'FILLER, Dairos Villalobos', email: 'm09@student.school', section: 'Stem 12 Robert Boyle', password: 'M09', gender: 'Male' },
+            { id: 'M10', name: 'HERNANDEZ, Chowen Albano', email: 'm10@student.school', section: 'Stem 12 Robert Boyle', password: 'M10', gender: 'Male' },
+            { id: 'M11', name: 'HORNILLA, Chris Lorenz Bendicio', email: 'm11@student.school', section: 'Stem 12 Robert Boyle', password: 'M11', gender: 'Male' },
+            { id: 'M12', name: 'LEGUARDA, Jam Marco Louis Padilla', email: 'm12@student.school', section: 'Stem 12 Robert Boyle', password: 'M12', gender: 'Male' },
+            { id: 'M13', name: 'MACALALAD, Cedric Baon', email: 'm13@student.school', section: 'Stem 12 Robert Boyle', password: 'M13', gender: 'Male' },
+            { id: 'M14', name: 'PANCIPANO, Eugene Jr Poris', email: 'm14@student.school', section: 'Stem 12 Robert Boyle', password: 'M14', gender: 'Male' },
+            { id: 'M15', name: 'RUBIO, Jake Consigo', email: 'm15@student.school', section: 'Stem 12 Robert Boyle', password: 'M15', gender: 'Male' },
+            { id: 'M16', name: 'SANCHEZ, Retszhel Bryne Martinez', email: 'm16@student.school', section: 'Stem 12 Robert Boyle', password: 'M16', gender: 'Male' },
+            { id: 'M17', name: 'SUELEN, Jordan Cadacio', email: 'm17@student.school', section: 'Stem 12 Robert Boyle', password: 'M17', gender: 'Male' },
+            { id: 'M18', name: 'VILLACRUSIS, Gian Carlo Balugna', email: 'm18@student.school', section: 'Stem 12 Robert Boyle', password: 'M18', gender: 'Male' },
+
+            // Female Students (F19-F37)
+            { id: 'F19', name: 'AMILA, Camille Grace Barangas', email: 'f19@student.school', section: 'Stem 12 Robert Boyle', password: 'F19', gender: 'Female' },
+            { id: 'F20', name: 'ATASAN, Maria Meryl Bathan', email: 'f20@student.school', section: 'Stem 12 Robert Boyle', password: 'F20', gender: 'Female' },
+            { id: 'F21', name: 'BARUA, Schinina Mae Noveno', email: 'f21@student.school', section: 'Stem 12 Robert Boyle', password: 'F21', gender: 'Female' },
+            { id: 'F22', name: 'BATHAN, Gean Maitan Alamag', email: 'f22@student.school', section: 'Stem 12 Robert Boyle', password: 'F22', gender: 'Female' },
+            { id: 'F23', name: 'BAUTISTA, Caitlin Tish De Los Reyes', email: 'f23@student.school', section: 'Stem 12 Robert Boyle', password: 'F23', gender: 'Female' },
+            { id: 'F24', name: 'BULACLAC, Abegail Aquino', email: 'f24@student.school', section: 'Stem 12 Robert Boyle', password: 'F24', gender: 'Female' },
+            { id: 'F25', name: 'BURGOS, Louise Jane Mandanas', email: 'f25@student.school', section: 'Stem 12 Robert Boyle', password: 'F25', gender: 'Female' },
+            { id: 'F26', name: 'CARINAN, Alecsa Cahinhinan', email: 'f26@student.school', section: 'Stem 12 Robert Boyle', password: 'F26', gender: 'Female' },
+            { id: 'F27', name: 'CARINAN, Sheena Mae Obsequias', email: 'f27@student.school', section: 'Stem 12 Robert Boyle', password: 'F27', gender: 'Female' },
+            { id: 'F28', name: 'DE LOS REYES, Samira Belle Mulingbayan', email: 'f28@student.school', section: 'Stem 12 Robert Boyle', password: 'F28', gender: 'Female' },
+            { id: 'F29', name: 'HALILI, Shekiescy Shane Bituin', email: 'f29@student.school', section: 'Stem 12 Robert Boyle', password: 'F29', gender: 'Female' },
+            { id: 'F30', name: 'JUNIO, Rica De Sosa', email: 'f30@student.school', section: 'Stem 12 Robert Boyle', password: 'F30', gender: 'Female' },
+            { id: 'F31', name: 'LA TORRE, Trizha Mercado', email: 'f31@student.school', section: 'Stem 12 Robert Boyle', password: 'F31', gender: 'Female' },
+            { id: 'F32', name: 'PEGA, Louisse Allysson Pinsan', email: 'f32@student.school', section: 'Stem 12 Robert Boyle', password: 'F32', gender: 'Female' },
+            { id: 'F33', name: 'QUIJANO, Elaysa Mae Garcia', email: 'f33@student.school', section: 'Stem 12 Robert Boyle', password: 'F33', gender: 'Female' },
+            { id: 'F34', name: 'RAMIREZ, Ma. Kristine Hernandez', email: 'f34@student.school', section: 'Stem 12 Robert Boyle', password: 'F34', gender: 'Female' },
+            { id: 'F35', name: 'ROSETE, Ma. Antonette Magsalay', email: 'f35@student.school', section: 'Stem 12 Robert Boyle', password: 'F35', gender: 'Female' },
+            { id: 'F36', name: 'TABORDA, Jen Syrelle Cortez', email: 'f36@student.school', section: 'Stem 12 Robert Boyle', password: 'F36', gender: 'Female' },
+            { id: 'F37', name: 'VENICARIO, Charmelle Elaine Mendoza', email: 'f37@student.school', section: 'Stem 12 Robert Boyle', password: 'F37', gender: 'Female' },
+        ];
+
+      let studentData = null;
+      try {
+        const stored = sessionStorage.getItem('studentData');
+        if (stored) studentData = JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse studentData', e);
+      }
+
+      if (!studentData) {
+        location.href = 'login.html?role=student';
+      }
+
+      function initializePortal() {
+        // Merge attendance records stored globally (teacher actions) into this student's subject records
+        try {
+          const raw = localStorage.getItem('student_records_' + (studentData.id || ''));
+          const allRecords = raw ? JSON.parse(raw) : [];
+          // attach records per subject
+          if (studentData.subjects && Array.isArray(studentData.subjects)) {
+            studentData.subjects.forEach(s => {
+              s.records = allRecords.filter(r => r.subject === s.code).map(r => ({ date: r.date, status: r.status }));
+              // recompute present/absent
+              s.present = (s.records || []).filter(r => r.status === 'present').length;
+              s.absent = (s.records || []).filter(r => r.status === 'absent').length;
+              // compute a simple streak: count of latest consecutive 'present' records
+              const sorted = (s.records || []).slice().sort((a,b)=> b.date.localeCompare(a.date));
+              let streak = 0;
+              for (let i=0;i<sorted.length;i++){
+                if (sorted[i].status === 'present') streak++; else break;
+              }
+              s.streak = streak;
+            });
+          }
+        } catch(e){ console.warn('Failed to merge attendance records', e); }
+
+        // Persist merged snapshot for this session
+        sessionStorage.setItem('studentData', JSON.stringify(studentData));
+
+        // Update header
+        document.getElementById('studentName').textContent = studentData.name || 'Student';
+        document.getElementById('studentSection').textContent = 'Section — ' + (studentData.section || '—');
+        document.getElementById('studentId').textContent = 'Student ID: ' + (studentData.id || '—');
+
+        // Calculate max streak across all subjects
+        const maxStreak = studentData.subjects ? Math.max(...studentData.subjects.map(s => s.streak || 0), 0) : 0;
+        document.getElementById('streakBadge').textContent = '🔥 Streak: ' + maxStreak;
+
+        // Update stats (recomputed from merged records)
+        const totalClasses = studentData.subjects ? studentData.subjects.reduce((sum, s) => sum + ((s.records||[]).length || 0), 0) : 0;
+        const presentCount = studentData.subjects ? studentData.subjects.reduce((sum, s) => sum + (s.present || 0), 0) : 0;
+        const attendanceRate = totalClasses > 0 ? Math.round((presentCount / totalClasses) * 100) : 0;
+
+        studentData.totalClasses = totalClasses;
+        document.getElementById('totalClassesStat').textContent = totalClasses;
+        document.getElementById('presentStat').textContent = presentCount;
+        document.getElementById('rateStat').textContent = attendanceRate + '%';
+
+        // Profile picture
+        const picCont = document.getElementById('profilePic');
+        if (studentData.photoUrl) {
+          const img = document.createElement('img');
+          img.src = studentData.photoUrl;
+          img.alt = studentData.name;
+          picCont.innerHTML = '';
+          picCont.appendChild(img);
+        } else {
+          const initials = studentData.name ? studentData.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'ST';
+          picCont.textContent = initials;
+        }
+
+        // Generate QR
+        const qrData = JSON.stringify({ student: studentData.id, name: studentData.name });
+        const qrContainer = document.getElementById('qrPreview');
+        qrContainer.innerHTML = '';
+
+            QRCode.toDataURL(qrData, { width: 240, margin: 1, color: { dark: '#0d9488', light: '#ffffff' } })
+          .then(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = 'Student QR';
+            qrContainer.appendChild(img);
+
+            // store last QR data url for ID generation
+            window.studentQrDataUrl = url;
+
+            // Wire view ID button (shows preview modal)
+            const viewBtn = document.getElementById('viewIdBtn');
+            if(viewBtn) {
+              viewBtn.onclick = () => { openIdModal(); };
+            }
+          });
+
+        renderAttendance();
+        renderSubjects();
+      }
+
+      // Render a student ID canvas (preview) - returns the canvas element
+      function renderStudentIDCanvas(){
+        const id = studentData.id || '';
+        const name = studentData.name || '';
+        const section = studentData.section || '';
+        const photo = studentData.photoUrl || null;
+        const qrUrl = window.studentQrDataUrl || null;
+
+        // default/generic ID dimensions (smaller default size)
+        const w = 420; const h = 600;
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        // background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0,0,w,h);
+
+        // header bar
+        ctx.fillStyle = '#0d9488';
+        ctx.fillRect(0,0,w,72);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 20px Arial';
+        ctx.fillText('QRAttend ID', 18, 44);
+        // optional school logo at top-right
+        if(studentData.schoolLogo){
+          try{
+            const logoImg = new Image();
+            logoImg.crossOrigin = 'anonymous';
+            logoImg.onload = () => { ctx.drawImage(logoImg, w - 80, 8, 64, 48); };
+            logoImg.src = studentData.schoolLogo;
+          }catch(e){ /* ignore */ }
+        }
+
+        // left top photo box
+        const picX = 20, picY = 90, picSize = 110;
+        ctx.fillStyle = '#f3fffb';
+        ctx.fillRect(picX-6, picY-6, picSize+12, picSize+12);
+        ctx.fillStyle = '#e6fffa';
+        ctx.fillRect(picX, picY, picSize, picSize);
+        if(photo){
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => { ctx.drawImage(img, picX, picY, picSize, picSize); };
+          img.src = photo;
+        } else {
+          ctx.fillStyle = '#0d9488';
+          ctx.font = '700 36px Arial';
+          const initials = (name.split(' ').map(n=>n[0]).slice(0,2).join('') || 'ST').toUpperCase();
+          ctx.fillText(initials, picX + 18, picY + picSize/2 + 12);
+        }
+
+        // Student name (big) and info
+        ctx.fillStyle = '#062a27';
+        ctx.font = '700 16px Arial';
+        wrapText(ctx, name, picX + picSize + 14, picY + 18, w - (picX + picSize + 28), 20);
+
+        // ID and Section under name
+        ctx.font = '600 14px Arial';
+        ctx.fillText('ID: ' + id, picX + picSize + 14, picY + 74);
+        ctx.fillText('Section: ' + section, picX + picSize + 14, picY + 96);
+
+        // Big QR centered in middle area
+        if(qrUrl){
+          const q = new Image();
+          q.crossOrigin = 'anonymous';
+          const qSize = 240;
+          const qX = Math.round((w - qSize)/2);
+          const qY = 220;
+          q.onload = () => {
+            // white panel behind QR
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(qX-8, qY-8, qSize+16, qSize+16);
+            // subtle border
+            ctx.strokeStyle = '#e6f6f0';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(qX-8, qY-8, qSize+16, qSize+16);
+            ctx.drawImage(q, qX, qY, qSize, qSize);
+          };
+          q.src = qrUrl;
+        }
+
+        // footer small note
+        ctx.fillStyle = '#6b7f7f';
+        ctx.font = '12px Arial';
+        ctx.fillText('Show this ID to your teacher for quick scan.', 18, h - 28);
+
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+          const words = text.split(' ');
+          let line = '';
+          for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            const testWidth = metrics.width;
+            if (testWidth > maxWidth && n > 0) {
+              ctx.fillText(line, x, y);
+              line = words[n] + ' ';
+              y += lineHeight;
+            }
+            else {
+              line = testLine;
+            }
+          }
+          ctx.fillText(line, x, y);
+        }
+
+        return canvas;
+      }
+
+      // Open modal to preview ID and provide download button
+      function openIdModal(){
+        // create modal if not present
+        let modal = document.getElementById('idModal');
+        if(!modal){
+          modal = document.createElement('div');
+          modal.id = 'idModal';
+          modal.className = 'modal';
+          modal.innerHTML = `<div class="modal-content" style="max-width:640px; width:92%; text-align:center;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <h3 style="margin:0">Your Student ID</h3>
+                <button class="modal-close" onclick="closeIdModal()">✕</button>
+              </div>
+              <div id="idPreviewContainer" style="display:flex;justify-content:center;padding:8px"></div>
+              <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+                <button class="btn" id="modalDownloadId">Download ID</button>
+                <button class="btn ghost" onclick="closeIdModal()">Close</button>
+              </div>
+            </div>`;
+          document.body.appendChild(modal);
+        }
+
+        // render canvas and show
+        const container = document.getElementById('idPreviewContainer');
+        container.innerHTML = '';
+        const canvas = renderStudentIDCanvas();
+        // allow QR img to load into canvas for full preview: if QR is async, add small timeout
+        setTimeout(()=>{
+          container.appendChild(canvas);
+        }, 250);
+
+        // download handler uses current canvas
+        document.getElementById('modalDownloadId').onclick = () => {
+          try{
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = (studentData.id || 'student') + '-id.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }catch(e){ console.error(e); alert('Failed to download ID'); }
+        };
+
+        modal.classList.add('show');
+      }
+
+      function closeIdModal(){ const modal = document.getElementById('idModal'); if(modal) modal.classList.remove('show'); }
+
+      // Existing function preserved for backward compatibility: will render and trigger download
+      function downloadStudentID(){
+        const canvas = renderStudentIDCanvas();
+        setTimeout(()=>{
+          try{
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = (studentData.id || 'student') + '-id.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }catch(e){ console.error('Failed to download ID', e); }
+        }, 300);
+      }
+
+      function renderAttendance() {
+        const container = document.getElementById('attendanceContent');
+        const subjects = studentData.subjects || [];
+
+        if (subjects.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>No subject data available yet.</p></div>';
+          return;
+        }
+
+        // Get filter values
+        const monthFilter = document.getElementById('monthFilter')?.value || '';
+        const startDate = document.getElementById('startDate')?.value || '';
+        const endDate = document.getElementById('endDate')?.value || '';
+
+        // Calculate filtered attendance
+        const filteredSubjects = subjects.map(s => {
+          let records = s.records || [];
+          
+          // Apply month filter
+          if (monthFilter) {
+            records = records.filter(r => {
+              const recordDate = new Date(r.date);
+              const month = String(recordDate.getMonth() + 1).padStart(2, '0');
+              return month === monthFilter;
+            });
+          }
+
+          // Apply date range filter
+          if (startDate) {
+            records = records.filter(r => new Date(r.date) >= new Date(startDate));
+          }
+          if (endDate) {
+            records = records.filter(r => new Date(r.date) <= new Date(endDate));
+          }
+
+          const present = records.filter(r => r.status === 'present').length;
+          const absent = records.filter(r => r.status === 'absent').length;
+          const total = records.length;
+          const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+
+          return {
+            ...s,
+            filteredTotal: total,
+            filteredPresent: present,
+            filteredAbsent: absent,
+            filteredRate: rate
+          };
+        });
+
+        let html = '<table class="attendance-table"><thead><tr><th>Subject</th><th>Code</th><th>Classes</th><th>Present</th><th>Absent</th><th>Rate</th><th>Streak</th></tr></thead><tbody>';
+        filteredSubjects.forEach(s => {
+          const total = s.filteredTotal || 0;
+          const present = s.filteredPresent || 0;
+          const absent = s.filteredAbsent || 0;
+          const rate = s.filteredRate || 0;
+          const streak = s.streak || 0;
+          html += `<tr>
+            <td><strong>${s.name}</strong></td>
+            <td>${s.code}</td>
+            <td>${total}</td>
+            <td><span class="status-present">${present}</span></td>
+            <td><span class="status-absent">${absent}</span></td>
+            <td>${rate}%</td>
+            <td><strong>${streak > 0 ? '🔥 ' + streak : '—'}</strong></td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      }
+
+      function resetAttendanceFilter() {
+        document.getElementById('monthFilter').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        renderAttendance();
+      }
+
+      function renderSubjects() {
+        const container = document.getElementById('subjectsContent');
+        const subjects = studentData.subjects || [];
+
+        if (subjects.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>You are not enrolled in any subjects yet.</p></div>';
+          return;
+        }
+
+        let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">';
+        subjects.forEach(s => {
+          const total = (s.present || 0) + (s.absent || 0);
+          const rate = total > 0 ? Math.round((s.present / total) * 100) : 0;
+          const streak = s.streak || 0;
+          html += `
+            <div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-radius:12px;padding:16px;border:1px solid #d1fae5;text-align:center;position:relative">
+              ${streak > 0 ? `<span style="position:absolute;top:8px;right:8px;background:#f59e0b;color:white;padding:4px 8px;border-radius:6px;font-size:0.75rem;font-weight:700">🔥${streak}</span>` : ''}
+              <h4 style="margin:0 0 6px;color:var(--green);font-size:1rem">${s.name}</h4>
+              <p style="margin:0 0 8px;color:var(--muted);font-size:0.85rem">${s.code}</p>
+              <div style="font-size:1.8rem;font-weight:700;color:var(--green);margin:8px 0">${rate}%</div>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted)">${s.present || 0}/${total} attended</p>
+            </div>
+          `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      }
+
+      function switchTab(tab) {
+        // Hide all sections
+        document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        // Show selected
+        if (tab === 'qr') {
+          document.getElementById('qrSection').classList.add('active');
+        } else if (tab === 'attendance') {
+          document.getElementById('attendanceSection').classList.add('active');
+        } else if (tab === 'subjects') {
+          document.getElementById('subjectsSection').classList.add('active');
+        } else if (tab === 'settings') {
+          document.getElementById('settingsSection').classList.add('active');
+        }
+
+        // Mark tab active
+        event.target.classList.add('active');
+      }
+
+      let selectedPhotoFile = null;
+
+      function handlePhotoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        selectedPhotoFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const preview = document.getElementById('photoPreview');
+          preview.innerHTML = `<img src="${e.target.result}" alt="Photo Preview">`;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function savePhoto() {
+        if (!selectedPhotoFile) {
+          showAlert('Please choose a photo first', 'error');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          studentData.photoUrl = e.target.result;
+          sessionStorage.setItem('studentData', JSON.stringify(studentData));
+
+          // Update profile pic in header
+          const picCont = document.getElementById('profilePic');
+          picCont.innerHTML = `<img src="${e.target.result}" alt="${studentData.name}" style="width:100%;height:100%;object-fit:cover">`;
+
+          showAlert('Profile photo updated successfully!', 'success');
+          selectedPhotoFile = null;
+          document.getElementById('photoInput').value = '';
+        };
+        reader.readAsDataURL(selectedPhotoFile);
+      }
+
+      function updatePassword() {
+        const currentPass = document.getElementById('currentPassword').value.trim();
+        const newPass = document.getElementById('newPassword').value.trim();
+        const confirmPass = document.getElementById('confirmPassword').value.trim();
+
+        if (!currentPass || !newPass || !confirmPass) {
+          showAlert('Please fill in all password fields', 'error');
+          return;
+        }
+
+        if (currentPass !== studentData.id) {
+          showAlert('Current password is incorrect', 'error');
+          return;
+        }
+
+        if (newPass.length < 4) {
+          showAlert('New password must be at least 4 characters', 'error');
+          return;
+        }
+
+        if (newPass !== confirmPass) {
+          showAlert('New password and confirmation do not match', 'error');
+          return;
+        }
+
+        studentData.password = newPass;
+        sessionStorage.setItem('studentData', JSON.stringify(studentData));
+
+        showAlert('Password updated successfully! Please log in again with your new password.', 'success');
+
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+
+        setTimeout(() => {
+          sessionStorage.clear();
+          location.href = 'login.html?role=student';
+        }, 2000);
+      }
+
+      function showAlert(message, type) {
+        const alertBox = document.getElementById('alertBox');
+        alertBox.innerHTML = `<div class="alert ${type}">${message}</div>`;
+        setTimeout(() => {
+          alertBox.innerHTML = '';
+        }, 4000);
+      }
+
+      function logout() {
+        sessionStorage.clear();
+        location.href = 'index.html';
+      }
+
+      initializePortal();
+    </script>
+  </body>
+</html>

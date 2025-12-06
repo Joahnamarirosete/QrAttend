@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Select Your Role — QRAttend</title>
+    <style>
+      :root{--bg:#f8fbf9;--green:#16a34a;--teal:#0d9488;--text:#0f3b36;--muted:#6b7f7f}
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh}
+      .card{background:white;border-radius:24px;padding:40px;box-shadow:0 20px 50px rgba(15,59,54,0.1);width:540px;text-align:center}
+      .back-link{display:block;margin-bottom:16px;text-align:left}
+      .back-link a{color:var(--teal);text-decoration:none;font-size:0.9rem}
+      h1{margin:0 0 8px;font-size:1.8rem;color:var(--text)}
+      p.subtitle{margin:0 0 32px;color:var(--muted);font-size:0.95rem}
+      .roles{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+      .role-btn{padding:20px;border-radius:16px;border:2px solid #e6f3f2;background:white;cursor:pointer;transition:all 0.2s;text-align:center}
+      .role-btn:hover{border-color:var(--teal);box-shadow:0 8px 24px rgba(13,148,136,0.15);transform:translateY(-2px)}
+      .role-btn.active{border-color:var(--teal);background:#f0fdf4}
+      .role-icon{font-size:36px;margin-bottom:8px}
+      .role-title{font-weight:700;color:var(--text);margin:8px 0}
+      .role-desc{font-size:0.9rem;color:var(--muted);margin:0}
+      .btn-proceed{display:block;width:100%;padding:8px 12px;margin-top:24px;border-radius:16px;border:none;background:linear-gradient(90deg,var(--green),var(--teal));color:white;font-size:0.95rem;font-weight:700;cursor:pointer;opacity:0.5;pointer-events:none;transition:opacity 0.2s}
+      /* One-inch fixed width utility */
+      .one-inch { width:1in; min-width:1in; max-width:1in; display:inline-block; text-align:center; }
+      .btn-proceed.active{opacity:1;pointer-events:auto}
+      @media (max-width:600px){.card{width:92%;padding:24px}.roles{grid-template-columns:1fr}}
+      /* Compact button override */
+      button, .btn, .primary, .btn-proceed, .logout, .btn-save, input[type="button"], input[type="submit"] {
+        padding:6px 8px !important;
+        font-size:0.85rem !important;
+        border-radius:6px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="back-link"><a href="index.html">← Back</a></div>
+      <h1>Select Your Role</h1>
+      <p class="subtitle">Choose whether you're a student or teacher to continue</p>
+      
+      <div class="roles">
+        <div class="role-btn" onclick="selectRole('student', this)">
+          <div class="role-icon">👨‍🎓</div>
+          <div class="role-title">Student</div>
+          <div class="role-desc">Check in to classes</div>
+        </div>
+        <div class="role-btn" onclick="selectRole('teacher', this)">
+          <div class="role-icon">👨‍🏫</div>
+          <div class="role-title">Teacher</div>
+          <div class="role-desc">Manage attendance</div>
+        </div>
+      </div>
+
+      <button class="btn-proceed one-inch" id="proceedBtn" onclick="proceedToLogin()">Continue to Login</button>
+    </div>
+
+    <script>
+      let selectedRole = null;
+
+      function selectRole(role, element) {
+        selectedRole = role;
+        // Remove active class from all role buttons
+        document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+        // Add active class to clicked button
+        element.classList.add('active');
+        // Enable proceed button
+        document.getElementById('proceedBtn').classList.add('active');
+      }
+
+      function proceedToLogin() {
+        if (selectedRole) {
+          // Redirect to login.html with role parameter
+          location.href = 'login.html?role=' + selectedRole;
+        }
+      }
+
+      function goToSignup() {
+        if (selectedRole) {
+          location.href = 'signup.html?role=' + selectedRole;
+        } else {
+          alert('Please select a role first');
+        }
+      }
+
+      // Keyboard shortcut: Enter key to proceed
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && selectedRole) {
+          proceedToLogin();
+        }
+      });
+    </script>
+  </body>
+</html>

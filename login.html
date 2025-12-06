@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR Attend System — Login</title>
+    <style>
+      :root{--bg:#f3fbf7;--card:#ffffff;--green:#16a34a;--muted:#6b7f7f}
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);display:flex;align-items:center;justify-content:center;min-height:100vh;color:#07323a}
+      .wrap{width:360px}
+      .card{background:var(--card);border-radius:16px;padding:28px;box-shadow:0 18px 40px rgba(4,20,12,0.08)}
+      .logo{width:84px;height:84;border-radius:10px;background:linear-gradient(180deg,#ecfdf5,#bbf7d0);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+      .logo strong{color:var(--green);font-size:20px}
+      h1{margin:6px 0 6px;text-align:center;color:var(--green)}
+      p.subtitle{text-align:center;color:var(--muted);margin:6px 0 16px}
+      .role-badge{display:inline-block;background:#ecfdf5;color:#047857;padding:4px 8px;border-radius:6px;font-size:0.85rem;margin-bottom:12px}
+      .tabs{display:flex;gap:8px;background:#f6fffb;padding:6px;border-radius:12px;margin:12px 0}
+      .tab{flex:1;padding:10px;border-radius:10px;text-align:center;cursor:pointer;color:#1f5a4a}
+      .tab.active{background:white;box-shadow:0 6px 18px rgba(2,6,23,0.05);font-weight:700}
+      .note{background:#ecfdf5;border:1px solid #d1fae5;color:#065f46;padding:12px;border-radius:10px;margin:12px 0;font-size:0.95rem}
+      label{display:block;font-weight:600;margin-top:10px;color:#0f3b36}
+      input{width:100%;padding:12px;border-radius:12px;border:1px solid #eef7f4;background:#fbfffe;margin-top:6px}
+      .primary{display:block;width:100%;padding:8px 10px;margin-top:14px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--green),#10b981);color:white;font-weight:700;cursor:pointer;font-size:0.9rem}
+      /* One-inch fixed width utility */
+      .one-inch { width:1in; min-width:1in; max-width:1in; display:inline-block; text-align:center; }
+      .links{display:flex;justify-content:space-between;margin-top:12px;font-size:0.9rem}
+      .links a{color:var(--green);text-decoration:none}
+      footer{margin-top:14px;text-align:center;color:var(--muted);font-size:0.9rem}
+      @media(max-width:420px){.wrap{width:92%}}
+      /* Global compact buttons override */
+      button, .btn, .primary, .btn-proceed, .logout, .btn-save, input[type="button"], input[type="submit"] {
+        padding:6px 8px !important;
+        font-size:0.85rem !important;
+        border-radius:6px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="logo"><strong>Qr</strong></div>
+        <h1>QR Attend System</h1>
+        <p class="subtitle">Fast and accurate attendance tracking</p>
+
+        <div id="roleInfo" style="display:none">
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active">Login</div>
+          <div class="tab" onclick="location.href='signup.html?role=' + getRole()">Sign Up</div>
+        </div>
+
+        <div id="noteBox" class="note"></div>
+
+        <form id="loginForm">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="studentID@student.school (e.g. m01@student.school)" required />
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Student ID (e.g. M01)" required />
+          <button class="primary one-inch" type="submit" style="margin:12px auto;display:block">Login</button>
+        </form>
+
+        <div class="links">
+          <a href="role.html">← Change Role</a>
+          <a href="index.html">Home</a>
+        </div>
+        <footer>QrAttend • Demo</footer>
+      </div>
+    </div>
+
+    <script>
+      function getRole() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('role') || 'student';
+      }
+
+      // default students available in the demo system
+      const studentsData = [
+            // Male Students (M01-M18)
+            { id: 'M01', name: 'ANINAO, Will Andrei Sarmiento', email: 'm01@student.school', section: 'Stem 12 Robert Boyle', password: 'M01', gender: 'Male' },
+            { id: 'M02', name: 'BARRAMEDA, Rexel Corona', email: 'm02@student.school', section: 'Stem 12 Robert Boyle', password: 'M02', gender: 'Male' },
+            { id: 'M03', name: 'BAUTISTA, Tristan Jake Hernandez', email: 'm03@student.school', section: 'Stem 12 Robert Boyle', password: 'M03', gender: 'Male' },
+            { id: 'M04', name: 'BAUYON, Luis Miguel Rogando', email: 'm04@student.school', section: 'Stem 12 Robert Boyle', password: 'M04', gender: 'Male' },
+            { id: 'M05', name: 'BITUIN, Jerzon Causapin', email: 'm05@student.school', section: 'Stem 12 Robert Boyle', password: 'M05', gender: 'Male' },
+            { id: 'M06', name: 'CARANDANG, Cris Dave Jerryl Macalalad', email: 'm06@student.school', section: 'Stem 12 Robert Boyle', password: 'M06', gender: 'Male' },
+            { id: 'M07', name: 'DE LA REA, Van Aaron Corpuz', email: 'm07@student.school', section: 'Stem 12 Robert Boyle', password: 'M07', gender: 'Male' },
+            { id: 'M08', name: 'ERMITA, John Cedric Creus', email: 'm08@student.school', section: 'Stem 12 Robert Boyle', password: 'M08', gender: 'Male' },
+            { id: 'M09', name: 'FILLER, Dairos Villalobos', email: 'm09@student.school', section: 'Stem 12 Robert Boyle', password: 'M09', gender: 'Male' },
+            { id: 'M10', name: 'HERNANDEZ, Chowen Albano', email: 'm10@student.school', section: 'Stem 12 Robert Boyle', password: 'M10', gender: 'Male' },
+            { id: 'M11', name: 'HORNILLA, Chris Lorenz Bendicio', email: 'm11@student.school', section: 'Stem 12 Robert Boyle', password: 'M11', gender: 'Male' },
+            { id: 'M12', name: 'LEGUARDA, Jam Marco Louis Padilla', email: 'm12@student.school', section: 'Stem 12 Robert Boyle', password: 'M12', gender: 'Male' },
+            { id: 'M13', name: 'MACALALAD, Cedric Baon', email: 'm13@student.school', section: 'Stem 12 Robert Boyle', password: 'M13', gender: 'Male' },
+            { id: 'M14', name: 'PANCIPANO, Eugene Jr Poris', email: 'm14@student.school', section: 'Stem 12 Robert Boyle', password: 'M14', gender: 'Male' },
+            { id: 'M15', name: 'RUBIO, Jake Consigo', email: 'm15@student.school', section: 'Stem 12 Robert Boyle', password: 'M15', gender: 'Male' },
+            { id: 'M16', name: 'SANCHEZ, Retszhel Bryne Martinez', email: 'm16@student.school', section: 'Stem 12 Robert Boyle', password: 'M16', gender: 'Male' },
+            { id: 'M17', name: 'SUELEN, Jordan Cadacio', email: 'm17@student.school', section: 'Stem 12 Robert Boyle', password: 'M17', gender: 'Male' },
+            { id: 'M18', name: 'VILLACRUSIS, Gian Carlo Balugna', email: 'm18@student.school', section: 'Stem 12 Robert Boyle', password: 'M18', gender: 'Male' },
+
+            // Female Students (F19-F37)
+            { id: 'F19', name: 'AMILA, Camille Grace Barangas', email: 'f19@student.school', section: 'Stem 12 Robert Boyle', password: 'F19', gender: 'Female' },
+            { id: 'F20', name: 'ATASAN, Maria Meryl Bathan', email: 'f20@student.school', section: 'Stem 12 Robert Boyle', password: 'F20', gender: 'Female' },
+            { id: 'F21', name: 'BARUA, Schinina Mae Noveno', email: 'f21@student.school', section: 'Stem 12 Robert Boyle', password: 'F21', gender: 'Female' },
+            { id: 'F22', name: 'BATHAN, Gean Maitan Alamag', email: 'f22@student.school', section: 'Stem 12 Robert Boyle', password: 'F22', gender: 'Female' },
+            { id: 'F23', name: 'BAUTISTA, Caitlin Tish De Los Reyes', email: 'f23@student.school', section: 'Stem 12 Robert Boyle', password: 'F23', gender: 'Female' },
+            { id: 'F24', name: 'BULACLAC, Abegail Aquino', email: 'f24@student.school', section: 'Stem 12 Robert Boyle', password: 'F24', gender: 'Female' },
+            { id: 'F25', name: 'BURGOS, Louise Jane Mandanas', email: 'f25@student.school', section: 'Stem 12 Robert Boyle', password: 'F25', gender: 'Female' },
+            { id: 'F26', name: 'CARINAN, Alecsa Cahinhinan', email: 'f26@student.school', section: 'Stem 12 Robert Boyle', password: 'F26', gender: 'Female' },
+            { id: 'F27', name: 'CARINAN, Sheena Mae Obsequias', email: 'f27@student.school', section: 'Stem 12 Robert Boyle', password: 'F27', gender: 'Female' },
+            { id: 'F28', name: 'DE LOS REYES, Samira Belle Mulingbayan', email: 'f28@student.school', section: 'Stem 12 Robert Boyle', password: 'F28', gender: 'Female' },
+            { id: 'F29', name: 'HALILI, Shekiescy Shane Bituin', email: 'f29@student.school', section: 'Stem 12 Robert Boyle', password: 'F29', gender: 'Female' },
+            { id: 'F30', name: 'JUNIO, Rica De Sosa', email: 'f30@student.school', section: 'Stem 12 Robert Boyle', password: 'F30', gender: 'Female' },
+            { id: 'F31', name: 'LA TORRE, Trizha Mercado', email: 'f31@student.school', section: 'Stem 12 Robert Boyle', password: 'F31', gender: 'Female' },
+            { id: 'F32', name: 'PEGA, Louisse Allysson Pinsan', email: 'f32@student.school', section: 'Stem 12 Robert Boyle', password: 'F32', gender: 'Female' },
+            { id: 'F33', name: 'QUIJANO, Elaysa Mae Garcia', email: 'f33@student.school', section: 'Stem 12 Robert Boyle', password: 'F33', gender: 'Female' },
+            { id: 'F34', name: 'RAMIREZ, Ma. Kristine Hernandez', email: 'f34@student.school', section: 'Stem 12 Robert Boyle', password: 'F34', gender: 'Female' },
+            { id: 'F35', name: 'ROSETE, Ma. Antoinette Magsalay', email: 'f35@student.school', section: 'Stem 12 Robert Boyle', password: 'F35', gender: 'Female' },
+            { id: 'F36', name: 'TABORDA, Jen Syrelle Cortez', email: 'f36@student.school', section: 'Stem 12 Robert Boyle', password: 'F36', gender: 'Female' },
+            { id: 'F37', name: 'VENICARIO, Charmelle Elaine Mendoza', email: 'f37@student.school', section: 'Stem 12 Robert Boyle', password: 'F37', gender: 'Female' },
+        ];
+
+      function initializeRole() {
+        const role = getRole();
+        if (role) {
+          document.getElementById('roleInfo').style.display = 'block';
+          document.getElementById('roleBadge').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+          // Customize note based on role
+          const noteBox = document.getElementById('noteBox');
+          if (role === 'student') {
+            noteBox.textContent = 'For Students: Use your email (format: m01@student.school for M01) and password (your Student ID like M01) to log in.';
+          } else if (role === 'teacher') {
+            noteBox.textContent = 'For Teachers: Use your registered email and password to log in.';
+          }
+        }
+      }
+
+      initializeRole();
+
+      function createStudentSession(student) {
+        // Create student portal data with actual subjects and attendance
+        const studentData = {
+          name: student.name,
+          email: student.email,
+          id: student.id,
+          section: student.section,
+          gender: student.gender,
+          totalClasses: 0,
+          attendanceRate: 0,
+          subjects: [
+            { name: 'Practical Research 2', code: 'PR2', present: 0, absent: 0, streak: 0 },
+            { name: 'Understanding Culture, Society, and Politics', code: 'UCSP', present: 0, absent: 0, streak: 0 },
+            { name: 'Personal Development', code: 'PD', present: 0, absent: 0, streak: 0 },
+            { name: 'Physical Education and Health', code: 'PE', present: 0, absent: 0, streak: 0 },
+            { name: 'General Chemistry', code: 'CHEM', present: 0, absent: 0, streak: 0 },
+            { name: 'General Physics', code: 'PHY', present: 0, absent: 0, streak: 0 },
+            { name: 'Introduction to the Philosophy of the Human Person', code: 'PHILO', present: 0, absent: 0, streak: 0 },
+            { name: 'English for Academic and Professional Purposes', code: 'EAPP', present: 0, absent: 0, streak: 0 }
+          ]
+        };
+        sessionStorage.setItem('studentData', JSON.stringify(studentData));
+      }
+
+      document.getElementById('loginForm').addEventListener('submit', function(e){
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim().toLowerCase();
+        const password = document.getElementById('password').value.trim();
+        const role = getRole();
+
+        if (role === 'student') {
+          // Find matching student (use studentsData)
+          // normalize email and allow case-insensitive match for IDs/password
+          const student = (studentsData || []).find(s => (s.email || '').toLowerCase() === email && (s.password || '').toString().toLowerCase() === password.toString().toLowerCase());
+          if (!student) {
+            alert('No matching student account found. Make sure you entered the correct email and Student ID as password.');
+            return;
+          }
+          // create session data and go to portal
+          createStudentSession(student);
+          sessionStorage.setItem('studentEmail', student.email);
+          sessionStorage.setItem('studentRole', 'student');
+          location.href = 'studentPortal.html';
+        } else if (role === 'teacher') {
+          // Teacher login: check against localStorage qr_teachers
+          try {
+            const teachers = JSON.parse(localStorage.getItem('qr_teachers') || '[]');
+            const teacher = teachers.find(t => t.email === email && t.password === password);
+            if (!teacher) {
+              alert('No matching teacher account found. Please check your email and password.');
+              return;
+            }
+            // Store teacher session and redirect to teacherPortal
+            sessionStorage.setItem('currentTeacher', JSON.stringify(teacher));
+            sessionStorage.setItem('teacherRole', 'teacher');
+            location.href = 'teacherPortal.html';
+          } catch (err) {
+            alert('Error logging in. Please try again.');
+            console.error(err);
+          }
+        } else {
+          alert('Unknown role. Please go back and select a role.');
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR Attend System — Sign Up</title>
+    <style>
+      :root{--bg:#f3fbf7;--card:#ffffff;--green:#16a34a;--muted:#6b7f7f}
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);display:flex;align-items:center;justify-content:center;min-height:100vh;color:#07323a}
+      .wrap{width:400px}
+      .card{background:var(--card);border-radius:16px;padding:28px;box-shadow:0 18px 40px rgba(4,20,12,0.08)}
+      .logo{width:84px;height:84;border-radius:10px;background:linear-gradient(180deg,#ecfdf5,#bbf7d0);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+      .logo strong{color:var(--green);font-size:20px}
+      h1{margin:6px 0 6px;text-align:center;color:var(--green)}
+      p.subtitle{text-align:center;color:var(--muted);margin:6px 0 12px}
+      .role-badge{display:inline-block;background:#ecfdf5;color:#047857;padding:4px 8px;border-radius:6px;font-size:0.85rem;margin-bottom:12px}
+      .tabs{display:flex;gap:8px;background:#f6fffb;padding:6px;border-radius:12px;margin:12px 0}
+      .tab{flex:1;padding:10px;border-radius:10px;text-align:center;cursor:pointer;color:#1f5a4a}
+      .tab.active{background:white;box-shadow:0 6px 18px rgba(2,6,23,0.05);font-weight:700}
+      .note{background:#ecfdf5;border:1px solid #d1fae5;color:#065f46;padding:12px;border-radius:10px;margin:12px 0;font-size:0.95rem}
+      label{display:block;font-weight:600;margin-top:10px;color:#0f3b36}
+      input{width:100%;padding:12px;border-radius:12px;border:1px solid #eef7f4;background:#fbfffe;margin-top:6px}
+      .primary{display:block;width:100%;padding:8px 10px;margin-top:14px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--green),#10b981);color:white;font-weight:700;cursor:pointer;font-size:0.9rem}
+      .links{display:flex;justify-content:space-between;margin-top:12px;font-size:0.9rem}
+      .links a{color:var(--green);text-decoration:none}
+      footer{margin-top:14px;text-align:center;color:var(--muted);font-size:0.9rem}
+      @media(max-width:420px){.wrap{width:92%}}
+      /* Ensure buttons remain compact across the app */
+      button, .btn, .primary, .btn-proceed, .logout, .btn-save, input[type="button"], input[type="submit"] {
+        padding:6px 8px !important;
+        font-size:0.85rem !important;
+        border-radius:6px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="logo"><strong>Qr</strong></div>
+        <h1>QR Attend System</h1>
+        <p class="subtitle">Fast and accurate attendance tracking</p>
+
+        <div id="roleInfo" style="display:none">
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+
+        <div class="tabs">
+          <div class="tab" onclick="location.href='login.html?role=' + getRole()">Login</div>
+          <div class="tab active">Sign Up</div>
+        </div>
+
+        <div id="noteBox" class="note"></div>
+
+        <form id="signupForm">
+          <label for="fullname">Full Name</label>
+          <input id="fullname" placeholder="John Doe" required />
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="your@email.com" required />
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Choose a strong password" required />
+          
+          <div id="studentFields" style="display:none">
+            <label for="studentid">Student ID</label>
+            <input id="studentid" placeholder="S1234567" />
+          </div>
+
+          <div id="teacherFields" style="display:none">
+            <label for="school">School/Institution</label>
+            <input id="school" placeholder="Your School Name" />
+          </div>
+
+          <button class="primary" type="submit" id="submitBtn"></button>
+        </form>
+
+        <div class="links">
+          <a href="role.html">← Change Role</a>
+          <a href="index.html">Home</a>
+        </div>
+        <footer>QrAttend • Demo</footer>
+      </div>
+    </div>
+
+    <script>
+      function getRole() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('role') || 'student';
+      }
+
+      function initializeRole() {
+        const role = getRole();
+        if (role) {
+          document.getElementById('roleInfo').style.display = 'block';
+          document.getElementById('roleBadge').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+          // Customize note and fields based on role
+          const noteBox = document.getElementById('noteBox');
+          const submitBtn = document.getElementById('submitBtn');
+
+          if (role === 'student') {
+            noteBox.textContent = 'Students are registered by teachers. Contact your teacher if you don\'t have an account.';
+            document.getElementById('studentFields').style.display = 'block';
+            submitBtn.textContent = 'Create Student Account';
+          } else if (role === 'teacher') {
+            noteBox.textContent = 'Teachers can create accounts to manage attendance and classrooms.';
+            document.getElementById('teacherFields').style.display = 'block';
+            submitBtn.textContent = 'Create Teacher Account';
+          }
+        }
+      }
+
+      initializeRole();
+
+      document.getElementById('signupForm').addEventListener('submit', function(e){
+        e.preventDefault();
+        const fullname = document.getElementById('fullname').value;
+        const role = getRole();
+        alert('Account created for ' + fullname + ' (' + role + '). You can now login.');
+        location.href = 'login.html?role=' + role;
+      });
+    </script>
+  </body>
+</html>
